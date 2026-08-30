@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "article6-ca-workbench",
+  "account_id": "1b72e4972bf0dd6b7818dd04284725ab",
   "main": "src/index.js",
   "compatibility_date": "2026-08-01",
 
@@ -19,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "article6",
-      "database_id": "PASTE_DATABASE_ID_HERE"
+      "database_id": "9fb0ecbc-f40e-4409-b3cb-693bd83565b2"
     }
   ],
 
