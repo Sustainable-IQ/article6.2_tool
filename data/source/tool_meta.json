@@ -1,0 +1,280 @@
+{
+ "source_file": "Article-6.2-CA-Reporting-Tool_v1.xlsx",
+ "publishers": [
+  "Gold Standard",
+  "Verra"
+ ],
+ "data_cutoff": "2026-08-14",
+ "introduction": {
+  "cover_text": "This tool provides a consolidated set of data to apply corresponding adjustments in the 2026 BTR for countries that have authorised activities/credits under Gold Standard and/or Verra. The data is structured in line with the structured summary table established in Table 4 of Decision 5/CMA.3.\n\nGold Standard and Verra would like to highlight the following:\n- The tool reflects Gold Standard and Verra's and interpretation of the structured summary reporting requirements in Table 4 of Decision 5/CMA.3. Where assumptions have been made, these are explained in column H of the tab, 'Structured Summary'. Reporting coutries should validate these as part of the BTR reporting process.\n- This document contains the full set of authorised mitigation outcomes according to Gold Standard and Verra's understanding of host country authorisations. In some instances, credits may have been authorised but project developers have not yet requested that labels be applied on the programmes' registries. For this reason, there may be credits included in this tool that have not been labelled on the programmes' registries.\n- The tool reflects data available as of 14 August 2026. Corresponding adjustments for authorisations and issuances that occur after this date may still be reported by countries in the 2026 BTR.\n\nHost countries should validate the data in this tool against their own records and ensure that volume of corresponding adjustments is consistent with the terms of the authorisation and that their BTR reporting complies with all applicable UNFCCC requirements and any guidance issued by their designated national authority. The full list of data is contained in Tab 3, 'Detailed Credit Data'.\n\nIn the event of any comments or omissions from this document, please contact David Hynes (david.hynes@goldstandard.org) or Liz Guinessey (eguinessey@verra.org)",
+  "how_to_use": "How to use this spreadsheet:\n\nStep 1: Answer the five questions below\nStep 2: On the 'Structured Summary' tab, input the relevant data into rows 3-6\nStep 3: The spreadsheet then automatically calculates the emissions balance to be reported, based on the country's GHG inventory and authorised mitigation outcomes.",
+  "questions": [
+   {
+    "cell": "B5",
+    "label": "Name of the country?",
+    "shipped_answer": "Tanzania"
+   },
+   {
+    "cell": "B6",
+    "label": "Does the country have a single- or multi-year NDC target?",
+    "shipped_answer": "Single-year"
+   },
+   {
+    "cell": "B7",
+    "label": "If the country has a single-year NDC target, which accounting method has it chosen according to Paragraph 7 of the annex to Decision 3/CMA.3?",
+    "shipped_answer": "Annual Adjustments/Trajectory"
+   },
+   {
+    "cell": "B8",
+    "label": "What is the latest year that the country will provide GHG inventory data for in BTR 2026?",
+    "shipped_answer": 2024
+   },
+   {
+    "cell": "B9",
+    "label": "Include data from all authorisations, or only authorisations that have been uploaded to the CARP?",
+    "shipped_answer": "All"
+   }
+  ]
+ },
+ "structured_summary_rows": [
+  {
+   "excel_row": 3,
+   "table4_field": "If applicable, an indicative multi-year emissions trajectory, trajectories or budget for its NDC implementation period",
+   "explanation": "Only relevant if the country has a single-year NDC target and chooses to adopt an indicative multi-year emissions trajectory, trajectories or budget under paragraph 7 of the Annex to decision Decision 5/CMA.3.",
+   "formula_col_B": null,
+   "cached_values": {
+    "2021": null,
+    "2022": null,
+    "2023": null,
+    "2024": null,
+    "2025": null,
+    "2026": null
+   }
+  },
+  {
+   "excel_row": 4,
+   "table4_field": "If applicable, multi-year emissions trajectory, trajectories or budget for its NDC implementation period that is consistent  with the NDC",
+   "explanation": "Only relevant if the country has a multi-year NDC target.",
+   "formula_col_B": null,
+   "cached_values": {
+    "2021": null,
+    "2022": null,
+    "2023": null,
+    "2024": null,
+    "2025": null,
+    "2026": null
+   }
+  },
+  {
+   "excel_row": 5,
+   "table4_field": "Annual anthropogenic emissions by sources and removals by sinks covered by its NDC or, where applicable, from the emission or sink categories as identified by the host Party  pursuant to paragraph 10 of annex to decision 2/CMA.3",
+   "explanation": "To be filled out based on the country's national GHG inventory",
+   "formula_col_B": null,
+   "cached_values": {
+    "2021": null,
+    "2022": null,
+    "2023": null,
+    "2024": null,
+    "2025": null,
+    "2026": null
+   }
+  },
+  {
+   "excel_row": 6,
+   "table4_field": "Annual anthropogenic emissions by sources and removals by  sinks covered by its NDC or, where applicable, from the portion of its NDC in accordance with paragraph 10, annex to  decision 2/CMA.3 ",
+   "explanation": "To be filled out based on the country's national GHG inventory",
+   "formula_col_B": null,
+   "cached_values": {
+    "2021": null,
+    "2022": null,
+    "2023": null,
+    "2024": null,
+    "2025": null,
+    "2026": null
+   }
+  },
+  {
+   "excel_row": 7,
+   "table4_field": "Annual quantity of ITMOs first transferred",
+   "explanation": "The total amount of first transfers in each year. It includes mitigation outcomes authorised for NDC use, or for NDC use and (O)IMP. Where authorised only for NDC use, it reflects the year of first international transfer. Where authorised for NDC use and (O)IMP, it reflects the earlier of first international transfer or the first transfer definition, as defined in the authorisation.",
+   "formula_col_B": "=SUMIFS('Detailed Credit Data'!$C:$C, 'Detailed Credit Data'!$F:$F, Introduction!$B$5, 'Detailed Credit Data'!$K:$K, \"Yes\", 'Detailed Credit Data'!$G:$G, \"Authorisation\", 'Detailed Credit Data'!$H:$H, B$2, 'Detailed Credit Data'!$N:$N, IF(Introduction!$B$9=\"All\", \"*\", \"Yes\")) + SUMIFS('Detailed Credit Data'!$C:$C, 'Detailed Credit Data'!$F:$F, Introduction!$B$5, 'Detailed Credit Data'!$K:$K, \"Yes\", 'Detailed Credit Data'!$G:$G, \"Issuance\", 'Detailed Credit Data'!$J:$J, B$2, 'Detailed Credit Data'!$N:$N, IF(Introduction!$B$9=\"All\", \"*\", \"Yes\"))",
+   "cached_values": {
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 0,
+    "2026": 0
+   }
+  },
+  {
+   "excel_row": 8,
+   "table4_field": "Annual quantity of mitigation outcomes authorized for use for  other international mitigation purposes and entities authorized  to use such mitigation outcomes, as appropriate",
+   "explanation": "The amount of first transferred mitigation outcomes only authorised for OIMP for each year, consistent with the host country's definition of first transfer in its authorisation. Note that where the first transfer definition is 'Authorisation', then the tool considers issuances that occur after the year of authorisation to have been first transferred in the year of authorisation.",
+   "formula_col_B": "=SUMIFS('Detailed Credit Data'!$C:$C, 'Detailed Credit Data'!$F:$F, Introduction!$B$5, 'Detailed Credit Data'!$K:$K, \"No\", 'Detailed Credit Data'!$G:$G, \"Authorisation\", 'Detailed Credit Data'!$H:$H, B$2, 'Detailed Credit Data'!$N:$N, IF(Introduction!$B$9=\"All\", \"*\", \"Yes\")) + SUMIFS('Detailed Credit Data'!$C:$C, 'Detailed Credit Data'!$F:$F, Introduction!$B$5, 'Detailed Credit Data'!$K:$K, \"No\", 'Detailed Credit Data'!$G:$G, \"Issuance\", 'Detailed Credit Data'!$J:$J, B$2, 'Detailed Credit Data'!$N:$N, IF(Introduction!$B$9=\"All\", \"*\", \"Yes\"))",
+   "cached_values": {
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 180867,
+    "2026": 142504
+   }
+  },
+  {
+   "excel_row": 9,
+   "table4_field": "Annual quantity of ITMOs used towards achievement of the NDC ",
+   "explanation": "Countries should include ITMOs authorised by other countries that have been used towards their NDC target that year.",
+   "formula_col_B": null,
+   "cached_values": {
+    "2021": null,
+    "2022": null,
+    "2023": null,
+    "2024": null,
+    "2025": null,
+    "2026": null
+   }
+  },
+  {
+   "excel_row": 10,
+   "table4_field": "Net annual quantity of ITMOs resulting from paras. 23(c)-(e),  annex to decision 2/CMA.3",
+   "explanation": "This is the sum of row 7 (annual quantity of ITMOs first transferred) and row 8 (first transferred mitigation outcomes authorised for (O)IMP) minus row 9 (annual quantity of ITMOs used towards NDC achievement).",
+   "formula_col_B": "=(B7+B8)-B9",
+   "cached_values": {
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 180867,
+    "2026": 142504
+   }
+  },
+  {
+   "excel_row": 11,
+   "table4_field": "If applicable, the cumulative amount of ITMOs, divided by the number of elapsed years in the NDC implementation period ",
+   "explanation": "This row only populates if the country has chosen the averaging approach as the accounting method. This tool assumes that elapsed years equate to the number of years for which a GHG inventory figure has been reported, and therefore corresponding adjustments can be applied, rather than the total number of years elapsed since the start of the NDC implementation period. Reporting countries should verify this approach against any guidance issued by their designated national authority and adjust the average figure accordingly.",
+   "formula_col_B": "=IF(OR(Introduction!$B$6=\"Multi-year\", Introduction!$B$7=\"Annual Adjustments/Trajectory\"), \"N/A\", IF(AND(Introduction!$B$6=\"single-year\", Introduction!$B$7=\"averaging\", NOT(ISBLANK(Introduction!$B$8)), B$2<=Introduction!$B$8), SUM($B$10:$G$10)/COUNTIF($B$2:$G$2, \"<=\"&Introduction!$B$8), \"\"))",
+   "cached_values": {
+    "2021": "N/A",
+    "2022": "N/A",
+    "2023": "N/A",
+    "2024": "N/A",
+    "2025": "N/A",
+    "2026": "N/A"
+   }
+  },
+  {
+   "excel_row": 12,
+   "table4_field": "Total quantitative corresponding adjustments used to calculate  the emissions balance referred to in para. 23(k)(i), annex to decision 2/CMA.3, in accordance with the Party’s method for applying corresponding adjustments consistent with section III.B, annex to decision 2/CMA.3",
+   "explanation": "Where a country has a single-year target and applies the averaging  approach, this row shows the average value of the net ITMOs (row 10). Where a country has either a multi-year NDC target, or a single-year target with an indicative trajectory, this gives annual adjustments, with additions for the years in which the mitigation occurred (i.e., the vintage of the ITMO), as per Para 8(a) of the Annex to Decision 2/CMA.3.",
+   "formula_col_B": "=IF(AND(Introduction!$B$6=\"Single-year\", Introduction!$B$7=\"Averaging\"), B11, SUMIFS('Detailed Credit Data'!$C:$C, 'Detailed Credit Data'!$F:$F, Introduction!$B$5, 'Detailed Credit Data'!$E:$E, B$2, 'Detailed Credit Data'!$N:$N, IF(Introduction!$B$9=\"All\", \"*\", \"Yes\")) - B9)",
+   "cached_values": {
+    "2021": 0,
+    "2022": 67497,
+    "2023": 230126,
+    "2024": 25748,
+    "2025": 0,
+    "2026": 0
+   }
+  },
+  {
+   "excel_row": 13,
+   "table4_field": "The cumulative information in respect of the annual \ninformation in para. 23(f), annex to decision 2/CMA.3, as applicable",
+   "explanation": "This row shows  the cumulative total of the net annual quantity of ITMOs (row 10).",
+   "formula_col_B": "=SUM($B$10:B10)",
+   "cached_values": {
+    "2021": 0,
+    "2022": 0,
+    "2023": 0,
+    "2024": 0,
+    "2025": 180867,
+    "2026": 323371
+   }
+  },
+  {
+   "excel_row": 14,
+   "table4_field": "For metrics in tonnes of CO2 eq. or non-GHG, an annual \nemissions balance consistent with chapter III.B",
+   "explanation": "This row shows the emissions balance for years for which a GHG inventory number has been included in row 5. The emissions balance is the net balance, i.e., the sum of GHG inventory emissions (row 5) and total corresponding adjustments (row 12). Emissions balances will only show for the latest year for which there is a GHG inventory figure; remaining cells will be blank.",
+   "formula_col_B": "=IF(AND(ISNUMBER(B12), B$2<=Introduction!$B$8), B5-B12, \"\")",
+   "cached_values": {
+    "2021": 0,
+    "2022": -67497,
+    "2023": -230126,
+    "2024": -25748,
+    "2025": null,
+    "2026": null
+   }
+  }
+ ],
+ "validations": {
+  "Introduction": [
+   {
+    "ranges": "B6",
+    "type": "list",
+    "formula1": "\"Single-year,Multi-year\""
+   },
+   {
+    "ranges": "B7",
+    "type": "list",
+    "formula1": "INDIRECT(SUBSTITUTE($B$6, \"-\", \"_\"))"
+   },
+   {
+    "ranges": "B8",
+    "type": "list",
+    "formula1": "\"2021,2022,2023,2024,2025\""
+   },
+   {
+    "ranges": "B9",
+    "type": "list",
+    "formula1": "\"All,Uploaded to the CARP\""
+   }
+  ],
+  "Detailed Credit Data": [
+   {
+    "ranges": "K2:L4999 N2:N5001",
+    "type": "list",
+    "formula1": "\"Yes,No\""
+   },
+   {
+    "ranges": "A2:A4999",
+    "type": "list",
+    "formula1": "\"GS, Verra\""
+   },
+   {
+    "ranges": "E2:E229 E587:E4999",
+    "type": "list",
+    "formula1": "\"2021, 2022, 2023, 2024, 2025, 2026\""
+   },
+   {
+    "ranges": "G2:G4999",
+    "type": "list",
+    "formula1": "\"Authorisation,Issuance,Use\""
+   },
+   {
+    "ranges": "H2:H4999",
+    "type": "list",
+    "formula1": "\"2021,2022,2023,2024,2025,2026\""
+   }
+  ]
+ },
+ "notes": [
+  {
+   "country": "Zimbabwe",
+   "note": "The first transfer definition in the authorisation associated with CA0011 is 'cancellation/use'. As part of the Technical Expert Review process, Zimbabwe confirmed the following: \"“Cancellation” in this instance therefore refers to the cancellation of a transactional record on the ZCR [Zimbabwe Carbon Registry] and not to the use or retirement of the credit. The Party [Zimbabwe] explained that the cancellation of a transactional record on the ZCR does not automatically trigger a corresponding adjustment, but is rather a precondition for successfully completing an inter-registry transfer. Instead, the inter-registry  transfer itself automatically triggers a corresponding adjustment.\" From the perspective of programme receiving the inter-registry transfer, this would be captured at the point of re-issuance of the credit on the programme's registry. Solely for the purposes of this tool, therefore, the OIMP first transfer definition is listed as 'Issuance', to ensure these authorisated mitigation outcomes are calculated correctly.",
+   "sources": "TER Report: https://unfccc.int/sites/default/files/resource/irterr2025_ZWEa01.pdf"
+  },
+  {
+   "country": "Gambia & Sierra Leone",
+   "note": "Both countries have indicated in their authorisation that 'first international transfer' is to be considered the first transfer condition. As per Verra's current approach, unless otherwise notified by the authorising government, 'first international transfer' will be considered to have occurred at the point of retirement of the VCU. For Gambia, retirements have occurred under project 4000; for Sierra Leone, no authorized VCUs have yet been retired, and no first transfer is considered to have taken place. \n\nVerra understands, based on informal discussions, issuance may be considered the first transfer condition by these governments. As such, these countries may ultimately elect to apply corresponding adjustments to these units. Absent formal notification, data does not currently populate for Gambia or Sierra Leone in this report.",
+   "sources": null
+  }
+ ],
+ "change_log": [
+  {
+   "version": 1,
+   "date": "2026-08-20",
+   "description": "Original version of the Article 6.2 Corresponding Adjustments Reporting Tool"
+  }
+ ],
+ "credit_row_count": 601
+}

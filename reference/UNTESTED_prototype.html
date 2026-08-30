@@ -1,0 +1,794 @@
+<title>Corresponding Adjustments Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#EEF1F5;
+  --surface:#FFFFFF;
+  --surface-2:#F7F9FB;
+  --ink:#0F1722;
+  --ink-2:#4B5768;
+  --ink-3:#778394;
+  --line:#D9E0EA;
+  --line-2:#EAEFF5;
+  --accent:#0B5C8A;
+  --accent-soft:#E3EEF5;
+  --accent-ink:#08425F;
+  --warn:#8A5A08;
+  --warn-soft:#FBF0DC;
+  --crit:#9B2418;
+  --crit-soft:#FBE7E4;
+  --ok:#166534;
+  --ok-soft:#E3F1E7;
+  --shadow:0 1px 2px rgba(15,23,34,.06),0 8px 24px -12px rgba(15,23,34,.18);
+  --radius:6px;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B1017;
+    --surface:#121A23;
+    --surface-2:#161F2A;
+    --ink:#E7EEF6;
+    --ink-2:#9DAAB9;
+    --ink-3:#71808F;
+    --line:#22303D;
+    --line-2:#1B2530;
+    --accent:#57A9D6;
+    --accent-soft:#122B3A;
+    --accent-ink:#9CCDE8;
+    --warn:#D9A441;
+    --warn-soft:#2C2312;
+    --crit:#E8837A;
+    --crit-soft:#2E1714;
+    --ok:#6FBF8B;
+    --ok-soft:#12261A;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B1017;
+  --surface:#121A23;
+  --surface-2:#161F2A;
+  --ink:#E7EEF6;
+  --ink-2:#9DAAB9;
+  --ink-3:#71808F;
+  --line:#22303D;
+  --line-2:#1B2530;
+  --accent:#57A9D6;
+  --accent-soft:#122B3A;
+  --accent-ink:#9CCDE8;
+  --warn:#D9A441;
+  --warn-soft:#2C2312;
+  --crit:#E8837A;
+  --crit-soft:#2E1714;
+  --ok:#6FBF8B;
+  --ok-soft:#12261A;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;text-wrap:balance;font-family:var(--serif);font-weight:600;letter-spacing:-.01em}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+.eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+  padding:14px 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;flex-direction:column;gap:1px;margin-right:auto}
+.brand h1{font-size:19px;line-height:1.15}
+.brand .sub{font-size:11.5px;color:var(--ink-3)}
+.modeswitch{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.modeswitch button{
+  border:0;background:var(--surface);padding:7px 13px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink-2);
+}
+.modeswitch button[aria-pressed="true"]{background:var(--accent);color:#fff}
+:root[data-theme="dark"] .modeswitch button[aria-pressed="true"],
+.modeswitch button[aria-pressed="true"]{color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .modeswitch button[aria-pressed="true"]{color:#08151D}}
+:root[data-theme="dark"] .modeswitch button[aria-pressed="true"]{color:#08151D}
+.divergence{
+  display:none;align-items:center;gap:7px;
+  padding:5px 11px;border-radius:100px;
+  background:var(--warn-soft);color:var(--warn);
+  font-size:12px;font-weight:600;
+}
+.divergence.on{display:inline-flex}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:336px minmax(0,1fr);align-items:start;gap:0}
+@media (max-width:1040px){.app{grid-template-columns:minmax(0,1fr)}}
+
+.rail{
+  border-right:1px solid var(--line);
+  background:var(--surface);
+  padding:20px 20px 40px;
+  display:flex;flex-direction:column;gap:22px;
+  min-height:calc(100vh - 60px);
+}
+@media (min-width:1041px){.rail{position:sticky;top:60px;max-height:calc(100vh - 60px);overflow-y:auto}}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.field .hint{font-size:11px;color:var(--ink-3);line-height:1.4}
+select,.txt{
+  width:100%;padding:7px 9px;
+  background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);
+  font-size:13.5px;
+}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.seg button{
+  flex:1;border:0;background:var(--surface-2);padding:7px 6px;cursor:pointer;
+  font-size:12.5px;font-weight:500;color:var(--ink-2);
+}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+
+.railhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  padding-bottom:7px;border-bottom:1px solid var(--line-2)}
+.railgroup{display:flex;flex-direction:column;gap:14px}
+
+.privacy{
+  display:flex;gap:9px;padding:11px 12px;border-radius:var(--radius);
+  background:var(--accent-soft);color:var(--accent-ink);
+  font-size:11.5px;line-height:1.45;
+}
+
+/* ---------- main ---------- */
+.main{padding:22px 24px 60px;display:flex;flex-direction:column;gap:18px;min-width:0}
+
+.alerts{display:flex;flex-direction:column;gap:9px}
+.alert{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:11px;
+  padding:12px 14px;border-radius:var(--radius);
+  border:1px solid var(--line);background:var(--surface);
+  box-shadow:var(--shadow);
+}
+.alert .sev{width:3px;border-radius:2px;background:var(--ink-3)}
+.alert.crit .sev{background:var(--crit)} .alert.crit .atitle{color:var(--crit)}
+.alert.warn .sev{background:var(--warn)} .alert.warn .atitle{color:var(--warn)}
+.alert.info .sev{background:var(--accent)} .alert.info .atitle{color:var(--accent-ink)}
+.atitle{font-size:12.5px;font-weight:700;margin-bottom:3px;letter-spacing:.005em}
+.abody{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.abody b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.panel{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+}
+.panelhead{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:13px 16px;border-bottom:1px solid var(--line-2);
+}
+.panelhead h2{font-size:15.5px}
+.panelhead .meta{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+
+.scroller{overflow-x:auto}
+table.grid{border-collapse:collapse;width:100%;min-width:820px}
+table.grid th,table.grid td{border-bottom:1px solid var(--line-2);text-align:right;padding:0}
+table.grid thead th{
+  position:sticky;top:60px;background:var(--surface);z-index:5;
+  padding:9px 12px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);border-bottom:1px solid var(--line);
+}
+table.grid thead th.lbl{text-align:left}
+td.lbl,th.lbl{text-align:left;width:38%;min-width:290px}
+.rowlabel{display:flex;gap:10px;align-items:flex-start;padding:9px 12px}
+.rownum{
+  flex:none;width:22px;height:20px;display:grid;place-items:center;
+  border-radius:4px;background:var(--surface-2);border:1px solid var(--line-2);
+  font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:1px;
+}
+.rowname{font-size:12.7px;font-weight:600;line-height:1.35}
+.rowsrc{font-size:10.5px;color:var(--ink-3);margin-top:2px;font-family:var(--mono)}
+tr.input .rownum{background:var(--accent-soft);border-color:transparent;color:var(--accent-ink)}
+tr.emph td{background:var(--surface-2)}
+tr.emph .rowname{font-weight:700}
+
+.cell{
+  padding:8px 12px;font-variant-numeric:tabular-nums;font-size:13.5px;
+  white-space:nowrap;
+}
+.cell.calc{cursor:pointer}
+.cell.calc:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.cell.sel{background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cell.sel{color:#08151D}}
+:root[data-theme="dark"] .cell.sel{color:#08151D}
+.cell.na{color:var(--ink-3)}
+.cell.diff{box-shadow:inset 0 0 0 2px var(--warn)}
+.cell input{
+  width:100%;max-width:118px;text-align:right;padding:5px 7px;
+  background:transparent;border:1px solid var(--line);border-radius:4px;
+  font-variant-numeric:tabular-nums;font-size:13px;
+}
+.cell input:hover{border-color:var(--accent)}
+.cell input::placeholder{color:var(--ink-3)}
+tr.disabled .cell{opacity:.35}
+tr.disabled .cell input{pointer-events:none}
+
+/* ---------- tabs / detail ---------- */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line-2);padding:0 16px;flex-wrap:wrap}
+.tabs button{
+  border:0;background:transparent;cursor:pointer;padding:11px 12px;
+  font-size:12.5px;font-weight:600;color:var(--ink-3);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabbody{padding:16px}
+
+table.data{border-collapse:collapse;width:100%;min-width:900px;font-size:12.3px}
+table.data th{
+  text-align:left;padding:7px 10px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+table.data td{padding:6px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+table.data td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.data td.sn{font-family:var(--mono);font-size:11px;color:var(--ink-2);word-break:break-all;max-width:280px}
+table.data a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent}
+table.data a:hover{border-bottom-color:currentColor}
+.chip{
+  display:inline-block;padding:1px 7px;border-radius:100px;
+  font-size:10.5px;font-weight:600;background:var(--surface-2);
+  border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap;
+}
+.chip.gs{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+.chip.vr{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+
+.empty{padding:28px 6px;text-align:center;color:var(--ink-3);font-size:12.5px}
+
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--surface-2)}
+.card .k{font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.card .v{font-family:var(--serif);font-size:27px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:5px;line-height:1.1}
+.card .d{font-size:11.5px;color:var(--ink-2);margin-top:5px}
+
+.checkitem{display:grid;grid-template-columns:auto minmax(0,1fr);gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+.checkitem:last-child{border-bottom:0}
+.checkitem input{margin-top:3px;accent-color:var(--accent);width:15px;height:15px}
+.checkitem .ct{font-size:12.5px;font-weight:600}
+.checkitem .cd{font-size:12.2px;color:var(--ink-2);line-height:1.5;margin-top:3px}
+.quote{border-left:2px solid var(--line);padding-left:11px;margin-top:7px;font-size:12px;color:var(--ink-2);font-style:italic}
+
+.btn{
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  padding:7px 13px;border-radius:var(--radius);cursor:pointer;
+  font-size:12.5px;font-weight:600;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#08151D}}
+:root[data-theme="dark"] .btn.primary{color:#08151D}
+.btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:13px}
+pre.out{
+  margin:0;padding:13px;background:var(--surface-2);border:1px solid var(--line-2);
+  border-radius:var(--radius);font-family:var(--mono);font-size:11px;line-height:1.55;
+  max-height:340px;overflow:auto;white-space:pre;color:var(--ink-2);
+}
+.foot{
+  padding:16px 24px 40px;font-size:11.5px;color:var(--ink-3);line-height:1.6;
+  border-top:1px solid var(--line);
+}
+.foot b{color:var(--ink-2);font-weight:600}
+</style>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Corresponding Adjustments Workbench</h1>
+    <span class="sub">Article 6.2 structured summary for the 2026 Biennial Transparency Report</span>
+  </div>
+  <div class="divergence" id="divflag"><span class="dot"></span><span id="divtext"></span></div>
+  <div class="modeswitch" role="group" aria-label="Calculation mode">
+    <button id="m-corrected" aria-pressed="true">Corrected</button>
+    <button id="m-compat" aria-pressed="false">Workbook v1</button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="rail">
+    <div class="railgroup">
+      <div class="railhead"><span class="eyebrow">Reporting Party</span></div>
+      <div class="field">
+        <label for="f-country">Host country</label>
+        <select id="f-country"></select>
+        <span class="hint" id="country-meta"></span>
+      </div>
+      <div class="field">
+        <label>NDC target type</label>
+        <div class="seg" role="group">
+          <button id="t-single" aria-pressed="true">Single-year</button>
+          <button id="t-multi" aria-pressed="false">Multi-year</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-method">Accounting method</label>
+        <select id="f-method"></select>
+        <span class="hint">Decision 2/CMA.3, annex, paragraph 7(a).</span>
+      </div>
+      <div class="field">
+        <label for="f-invyear">Latest GHG inventory year in BTR 2026</label>
+        <select id="f-invyear"></select>
+      </div>
+      <div class="field">
+        <label>Authorisation scope</label>
+        <div class="seg" role="group">
+          <button id="s-all" aria-pressed="true">All</button>
+          <button id="s-carp" aria-pressed="false">On the CARP only</button>
+        </div>
+        <span class="hint" id="scope-hint"></span>
+      </div>
+    </div>
+
+    <div class="railgroup">
+      <div class="railhead"><span class="eyebrow">Dataset</span></div>
+      <div class="card" style="padding:12px">
+        <div class="k">Snapshot</div>
+        <div class="d" style="margin-top:6px" id="ds-meta"></div>
+      </div>
+      <div class="privacy">
+        <span>Every figure you type stays in this browser. Nothing is uploaded, stored, or transmitted.</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="alerts" id="alerts"></div>
+
+    <section class="panel">
+      <div class="panelhead">
+        <h2>Structured summary</h2>
+        <span class="meta">Table 4, annex to Decision 5/CMA.3. Values in tCO<sub>2</sub>eq.</span>
+      </div>
+      <div class="scroller">
+        <table class="grid" id="summary"></table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs" role="tablist">
+        <button id="tab-detail" aria-selected="true">Cell detail</button>
+        <button id="tab-scope" aria-selected="false">Scope comparison</button>
+        <button id="tab-assume" aria-selected="false">Assumptions to sign off</button>
+        <button id="tab-export" aria-selected="false">Export</button>
+      </div>
+      <div class="tabbody" id="tabbody"></div>
+    </section>
+  </main>
+</div>
+
+<div class="foot">
+  <b>Prototype.</b> Calculation engine reconciled against the Gold Standard and Verra workbook
+  <span style="font-family:var(--mono)">Article-6.2-CA-Reporting-Tool_v1.xlsx</span> (version 1.0, 20 August 2026, data cutoff 14 August 2026).
+  Workbook v1 mode reproduces that file exactly. Corrected mode applies the fixes listed under Assumptions and marks every cell where the two diverge.
+  This is not an authoritative record. Host countries must validate against their own records and any guidance from their designated national authority.
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+/* ---------- expand the columnar dataset ---------- */
+const YEARS=[2021,2022,2023,2024,2025,2026];
+const C=DATA.c, D=DATA.d;
+const ROWS=[];
+for(let i=0;i<DATA.n;i++){
+  ROWS.push({
+    i, prog:D.prog[C.prog[i]], pid:C.pid[i], vol:C.vol[i], sn:C.sn[i], vin:C.vin[i],
+    cty:D.cty[C.cty[i]], ftd:D.ftd[C.ftd[i]], ay:C.ay[i], idt:C.idt[i], iy:C.iy[i],
+    ndc:!!C.ndc[i], oimp:!!C.oimp[i], ca:D.ca[C.ca[i]], carp:!!C.carp[i],
+    url:C.url[i]<0?null:D.url[C.url[i]]
+  });
+}
+const COUNTRIES=[...new Set(ROWS.map(r=>r.cty))].sort();
+const RECOGNISED=new Set(["Authorisation","Issuance"]);
+const fmt=n=>(n===""||n===null||n===undefined)?"":(typeof n==="string"?n:Math.round(n).toLocaleString("en-US"));
+
+/* ---------- state ---------- */
+const S={
+  country:"Rwanda", target:"Single-year", method:"Annual Adjustments/Trajectory",
+  invYear:2024, scope:"All", mode:"corrected",
+  inputs:{3:{},4:{},5:{},6:{},9:{}},
+  sel:null, tab:"detail", signed:{}
+};
+
+/* ---------- engine ---------- */
+function engine(cfg, mode){
+  const pool=ROWS.filter(r=>r.cty===cfg.country && (cfg.scope==="All"||r.carp));
+  const corrected = mode==="corrected";
+  const inScope = r => corrected ? RECOGNISED.has(r.ftd) : true;
+  const contrib={7:{},8:{},12:{}};
+  const v={7:{},8:{},9:{},10:{},11:{},12:{},13:{},14:{}};
+
+  const ftMatch=(r,y)=> (r.ftd==="Authorisation"&&r.ay===y)||(r.ftd==="Issuance"&&r.iy===y);
+
+  for(const y of YEARS){
+    const c7=pool.filter(r=>r.ndc && ftMatch(r,y));
+    const c8=pool.filter(r=>!r.ndc && ftMatch(r,y));
+    contrib[7][y]=c7; contrib[8][y]=c8;
+    v[7][y]=c7.reduce((a,r)=>a+r.vol,0);
+    v[8][y]=c8.reduce((a,r)=>a+r.vol,0);
+    v[9][y]=num(cfg.inputs[9][y]);
+    v[10][y]=(v[7][y]+v[8][y])-v[9][y];
+  }
+
+  const averaging = cfg.target==="Single-year" && cfg.method==="Averaging";
+  const elapsed = YEARS.filter(y=>y<=cfg.invYear).length;
+  const avg = elapsed ? YEARS.reduce((a,y)=>a+v[10][y],0)/elapsed : 0;
+  for(const y of YEARS){
+    if(cfg.target==="Multi-year"||cfg.method==="Annual Adjustments/Trajectory") v[11][y]="N/A";
+    else if(averaging && y<=cfg.invYear) v[11][y]=avg;
+    else v[11][y]="";
+  }
+
+  for(const y of YEARS){
+    if(averaging){ v[12][y]=v[11][y]; contrib[12][y]=[]; }
+    else{
+      const c12=pool.filter(r=>r.vin===y && inScope(r));
+      contrib[12][y]=c12;
+      v[12][y]=c12.reduce((a,r)=>a+r.vol,0)-v[9][y];
+    }
+  }
+
+  let run=0;
+  for(const y of YEARS){ run+=v[10][y]; v[13][y]=run; }
+
+  for(const y of YEARS){
+    const t=v[12][y];
+    v[14][y]=(typeof t==="number" && y<=cfg.invYear) ? num(cfg.inputs[5][y])-t : "";
+  }
+  return {v,contrib,pool};
+}
+function num(x){ const n=parseFloat(String(x??"").replace(/[, ]/g,"")); return isFinite(n)?n:0; }
+
+/* ---------- row metadata ---------- */
+const RM=DATA.rowmeta;
+
+/* ---------- rendering ---------- */
+function activeRows(){
+  const hidden=new Set();
+  if(S.target==="Single-year"){ hidden.add(4); } else { hidden.add(3); }
+  return [3,4,5,6,7,8,9,10,11,12,13,14].map(n=>({n,off:hidden.has(n)}));
+}
+
+function renderSummary(){
+  const A=engine(S,S.mode);
+  const B=engine(S,S.mode==="corrected"?"compat":"corrected");
+  const t=document.getElementById("summary");
+  let h="<thead><tr><th class='lbl'>Field</th>"+YEARS.map(y=>`<th>${y}</th>`).join("")+"</tr></thead><tbody>";
+  let diffs=0;
+  for(const {n,off} of activeRows()){
+    const m=RM[n], isInput=[3,4,5,6,9].includes(n);
+    const emph=[12,14].includes(n)?" emph":"";
+    h+=`<tr class="${isInput?"input":"calc"}${off?" disabled":""}${emph}">`;
+    h+=`<td class="lbl"><div class="rowlabel"><span class="rownum">${n}</span><span><span class="rowname">${m.short}</span><span class="rowsrc">${m.src}</span></span></div></td>`;
+    for(const y of YEARS){
+      if(isInput){
+        const val=S.inputs[n][y]??"";
+        h+=`<td class="cell"><input inputmode="numeric" data-row="${n}" data-year="${y}" value="${val}" placeholder="0" aria-label="${m.short} ${y}"></td>`;
+      }else{
+        const a=A.v[n][y], b=B.v[n][y];
+        const isDiff=(typeof a==="number"&&typeof b==="number")?Math.round(a)!==Math.round(b):a!==b;
+        if(isDiff) diffs++;
+        const na=(a===""||a==="N/A");
+        const sel=S.sel&&S.sel.row===n&&S.sel.year===y;
+        h+=`<td class="cell calc${na?" na":""}${isDiff?" diff":""}${sel?" sel":""}" data-row="${n}" data-year="${y}" tabindex="0" role="button">${a==="N/A"?"N/A":(a===""?"&mdash;":fmt(a))}</td>`;
+      }
+    }
+    h+="</tr>";
+  }
+  t.innerHTML=h+"</tbody>";
+
+  const df=document.getElementById("divflag");
+  if(diffs>0){ df.classList.add("on"); document.getElementById("divtext").textContent=diffs+" cell"+(diffs===1?"":"s")+" differ from "+(S.mode==="corrected"?"workbook v1":"corrected"); }
+  else df.classList.remove("on");
+
+  t.querySelectorAll("input").forEach(el=>{
+    el.addEventListener("input",()=>{
+      S.inputs[+el.dataset.row][+el.dataset.year]=el.value;
+      renderAll({keepFocus:el.dataset.row+"-"+el.dataset.year});
+    });
+  });
+  t.querySelectorAll(".cell.calc").forEach(el=>{
+    const go=()=>{ S.sel={row:+el.dataset.row,year:+el.dataset.year}; S.tab="detail"; renderAll(); };
+    el.addEventListener("click",go);
+    el.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();go();} });
+  });
+  return A;
+}
+
+function renderAlerts(A){
+  const box=document.getElementById("alerts");
+  const out=[];
+  const pool=A.pool;
+  const unrec=pool.filter(r=>!RECOGNISED.has(r.ftd));
+  const unrecVol=unrec.reduce((a,r)=>a+r.vol,0);
+
+  if(unrec.length){
+    const compat=engine(S,"compat"), corr=engine(S,"corrected");
+    const cSum=YEARS.reduce((a,y)=>a+(typeof compat.v[12][y]==="number"?compat.v[12][y]:0),0);
+    const kSum=YEARS.reduce((a,y)=>a+(typeof corr.v[12][y]==="number"?corr.v[12][y]:0),0);
+    out.push(["crit","First transfer definition is not resolved for "+unrec.length+" credit block"+(unrec.length===1?"":"s"),
+      `<b>${fmt(unrecVol)}</b> tCO2eq in this country carry the first transfer definition
+       &ldquo;${unrec[0].ftd}&rdquo;, which the workbook&rsquo;s own logic does not recognise.
+       Rows 7 and 8 therefore report zero, while workbook v1 still counts the full volume in row 12.
+       Workbook v1 total corresponding adjustments: <b>${fmt(cSum)}</b>. Corrected: <b>${fmt(kSum)}</b>.
+       A structured summary showing zero first transfers alongside a non-zero adjustment is internally
+       inconsistent. Resolve the definition with the designated national authority before submitting.`]);
+  }
+
+  const note=DATA.notes.find(nt=>String(nt.country||"").split(/\s*&\s*/).includes(S.country));
+  if(note){
+    out.push(["warn","Programme note on record for "+S.country, `<span class="quote">${esc(note.note).slice(0,700)}${note.note.length>700?"&hellip;":""}</span>
+      ${note.sources?`<div style="margin-top:7px;font-size:11.5px">${linkify(note.sources)}</div>`:""}`]);
+  }
+
+  const allTot=totalCA({...S,scope:"All"}), carpTot=totalCA({...S,scope:"CARP"});
+  if(allTot!==carpTot){
+    out.push(["info","Authorisation scope changes the result",
+      `All authorisations gives <b>${fmt(allTot)}</b> tCO2eq of corresponding adjustments.
+       Restricting to authorisations uploaded to the CARP gives <b>${fmt(carpTot)}</b>,
+       a difference of <b>${fmt(allTot-carpTot)}</b>. Currently showing <b>${S.scope==="All"?"all authorisations":"CARP only"}</b>.`]);
+  }
+
+  if(!YEARS.some(y=>num(S.inputs[9][y])>0)){
+    out.push(["info","Row 9 is an input the workbook does not flag",
+      `The workbook instructs users to fill rows 3 to 6. Row 9, ITMOs received from other Parties
+       and used towards your NDC, is also a manual entry and feeds rows 10 and 12. It is currently zero
+       for every year. Confirm that is correct.`]);
+  }
+
+  const dupes=findDupes(pool);
+  if(dupes.length){
+    out.push(["warn","Duplicate serial number in the source data",
+      `${dupes.length} serial number${dupes.length===1?"":"s"} appear more than once for this country in the
+       published dataset, which may double count volume. First: <span style="font-family:var(--mono);font-size:11px">${esc(dupes[0])}</span>.`]);
+  }
+
+  box.innerHTML=out.map(([sev,title,body])=>
+    `<div class="alert ${sev}"><div class="sev"></div><div><div class="atitle">${title}</div><div class="abody">${body}</div></div></div>`
+  ).join("");
+}
+
+function totalCA(cfg){
+  const r=engine(cfg,S.mode);
+  return YEARS.reduce((a,y)=>a+(typeof r.v[12][y]==="number"?r.v[12][y]:0),0);
+}
+function findDupes(pool){
+  const seen=new Map(); const out=[];
+  for(const r of pool){ seen.set(r.sn,(seen.get(r.sn)||0)+1); }
+  for(const [k,v] of seen) if(v>1) out.push(k);
+  return out;
+}
+function esc(s){return String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function linkify(s){return esc(s).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');}
+
+/* ---------- tabs ---------- */
+function renderTab(A){
+  const el=document.getElementById("tabbody");
+  ["detail","scope","assume","export"].forEach(k=>
+    document.getElementById("tab-"+k).setAttribute("aria-selected",String(S.tab===k)));
+
+  if(S.tab==="detail") el.innerHTML=tabDetail(A);
+  else if(S.tab==="scope") el.innerHTML=tabScope();
+  else if(S.tab==="assume"){ el.innerHTML=tabAssume(A); bindAssume(); }
+  else { el.innerHTML=tabExport(A); bindExport(A); }
+}
+
+function tabDetail(A){
+  if(!S.sel) return `<div class="empty">Select any calculated cell in the structured summary to see the credit blocks behind it.</div>`;
+  const {row,year}=S.sel, m=RM[row];
+  const list=(A.contrib[row]&&A.contrib[row][year])||[];
+  let h=`<div style="margin-bottom:13px">
+    <div class="eyebrow">Row ${row} &middot; ${year}</div>
+    <div style="font-family:var(--serif);font-size:19px;font-weight:600;margin:3px 0 6px">${fmt(A.v[row][year])}</div>
+    <div style="font-size:12.5px;color:var(--ink-2);max-width:74ch;line-height:1.55">${esc(m.explain||m.short)}</div>
+  </div>`;
+  if(!list.length){
+    h+=`<div class="empty">${row===12&&S.method==="Averaging"?"Under the averaging method this row takes its value from row 11 rather than from individual credit blocks.":"No credit blocks contribute to this cell. It is derived from other rows or from your own figures."}</div>`;
+    return h;
+  }
+  const tot=list.reduce((a,r)=>a+r.vol,0);
+  h+=`<div class="scroller"><table class="data"><thead><tr>
+    <th>Programme</th><th>Project</th><th style="text-align:right">Volume</th><th>Vintage</th>
+    <th>First transfer</th><th>Auth year</th><th>Issued</th><th>NDC</th><th>CARP</th><th>CA ID</th><th>Serial</th><th>Source</th>
+  </tr></thead><tbody>`;
+  for(const r of list.slice(0,300)){
+    h+=`<tr>
+      <td><span class="chip ${r.prog==="GS"?"gs":"vr"}">${r.prog}</span></td>
+      <td>${esc(r.pid)}</td>
+      <td class="num">${fmt(r.vol)}</td>
+      <td class="num">${r.vin}</td>
+      <td>${esc(r.ftd)}</td>
+      <td class="num">${r.ay}</td>
+      <td class="num">${esc(r.idt)}</td>
+      <td>${r.ndc?"Yes":"No"}</td>
+      <td>${r.carp?"Yes":"No"}</td>
+      <td>${esc(r.ca)}</td>
+      <td class="sn">${esc(r.sn)}</td>
+      <td>${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">Authorisation</a>`:"<span style='color:var(--ink-3)'>None</span>"}</td>
+    </tr>`;
+  }
+  h+=`</tbody><tfoot><tr><td colspan="2" style="font-weight:700;padding:9px 10px">${list.length} block${list.length===1?"":"s"}</td>
+    <td class="num" style="font-weight:700;padding:9px 10px">${fmt(tot)}</td><td colspan="9"></td></tr></tfoot></table></div>`;
+  if(list.length>300) h+=`<div style="font-size:11.5px;color:var(--ink-3);margin-top:9px">Showing the first 300 of ${list.length} blocks.</div>`;
+  return h;
+}
+
+function tabScope(){
+  const mk=scope=>{ const r=engine({...S,scope},S.mode);
+    return {ca:YEARS.reduce((a,y)=>a+(typeof r.v[12][y]==="number"?r.v[12][y]:0),0),
+            ft:YEARS.reduce((a,y)=>a+r.v[7][y]+r.v[8][y],0),
+            n:r.pool.length}; };
+  const a=mk("All"), b=mk("CARP");
+  const pct=a.ca?Math.round((1-b.ca/a.ca)*100):0;
+  return `<div class="cmp">
+    <div class="card"><div class="k">All authorisations</div><div class="v">${fmt(a.ca)}</div>
+      <div class="d">${a.n} credit blocks. First transfers ${fmt(a.ft)}.</div></div>
+    <div class="card"><div class="k">On the CARP only</div><div class="v">${fmt(b.ca)}</div>
+      <div class="d">${b.n} credit blocks. First transfers ${fmt(b.ft)}.</div></div>
+    <div class="card"><div class="k">Difference</div><div class="v">${fmt(a.ca-b.ca)}</div>
+      <div class="d">${pct}% of the adjustment total rests on authorisations not yet uploaded to the CARP.</div></div>
+  </div>
+  <div style="margin-top:15px;font-size:12.5px;color:var(--ink-2);max-width:74ch;line-height:1.6">
+    The scope answer is the single most consequential setting in the workbook and it is presented as an
+    ordinary dropdown. Countries should decide deliberately whether an authorisation that has not been
+    uploaded to the Article 6 centralised accounting and reporting platform belongs in the submitted summary.
+  </div>`;
+}
+
+function tabAssume(A){
+  const items=[
+    ["Programme interpretation of Table 4","Gold Standard and Verra state that the workbook reflects their interpretation of the structured summary requirements, not an authoritative reading. Every row below inherits that caveat.",RM[7].explain],
+    ["First transfer treatment for (O)IMP-only outcomes","Where the authorisation defines first transfer as authorisation, the workbook treats issuances occurring after the authorisation year as first transferred in the authorisation year.",RM[8].explain],
+    ["Elapsed years under the averaging method","The workbook equates elapsed years with the number of years for which an inventory figure is reported, not the years since the NDC period began.",RM[11].explain],
+    ["Vintage attribution of adjustments","Under the trajectory method, adjustments are added in the year the mitigation occurred, meaning the vintage of the unit.",RM[12].explain],
+    ["Emissions balance coverage","Balances appear only for years with a reported inventory figure. Later years stay blank.",RM[14].explain],
+    ["Correct legal citation","The workbook cites the single-year accounting choice to Decision 3/CMA.3 on one sheet and Decision 5/CMA.3 on another. Neither is right. The provision is Decision 2/CMA.3, annex, paragraph 7(a). This tool uses the correct citation.",""]
+  ];
+  const n=items.filter((_,i)=>S.signed[i]).length;
+  return `<div style="font-size:12.5px;color:var(--ink-2);max-width:74ch;margin-bottom:13px;line-height:1.6">
+      Each item below is an interpretive choice made by the programmes rather than a fact in the registry record.
+      A designated national authority should confirm each one before the structured summary is submitted.
+      <b style="color:var(--ink)">${n} of ${items.length} confirmed.</b>
+    </div>` +
+    items.map((it,i)=>`<label class="checkitem">
+      <input type="checkbox" data-i="${i}" ${S.signed[i]?"checked":""}>
+      <span><span class="ct">${it[0]}</span><span class="cd">${esc(it[1])}</span>
+      ${it[2]?`<span class="quote">${esc(it[2])}</span>`:""}</span></label>`).join("");
+}
+function bindAssume(){
+  document.querySelectorAll(".checkitem input").forEach(el=>
+    el.addEventListener("change",()=>{S.signed[el.dataset.i]=el.checked;renderTab(engine(S,S.mode));}));
+}
+
+function buildCSV(A){
+  const L=[];
+  L.push(["Article 6.2 structured summary"]);
+  L.push(["Party",S.country]);
+  L.push(["NDC target type",S.target]);
+  L.push(["Accounting method",S.method]);
+  L.push(["Latest inventory year",S.invYear]);
+  L.push(["Authorisation scope",S.scope==="All"?"All authorisations":"Uploaded to the CARP only"]);
+  L.push(["Calculation mode",S.mode==="corrected"?"Corrected":"Workbook v1 compatibility"]);
+  L.push(["Source dataset","Gold Standard and Verra, Article-6.2-CA-Reporting-Tool_v1.xlsx, cutoff "+DATA.cutoff]);
+  L.push([]);
+  L.push(["Row","Field from Table 4 of Decision 5/CMA.3",...YEARS]);
+  for(const {n,off} of activeRows()){
+    if(off) continue;
+    const vals=YEARS.map(y=>[3,4,5,6,9].includes(n)?(S.inputs[n][y]??""):(typeof A.v[n][y]==="number"?Math.round(A.v[n][y]):A.v[n][y]));
+    L.push([n,RM[n].full.replace(/\s+/g," ").trim(),...vals]);
+  }
+  return L.map(r=>r.map(c=>{const s=String(c??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
+}
+function buildAudit(A){
+  const L=[["Row","Year","Programme","Project ID","Volume","Vintage","First transfer definition","Authorisation year","Issuance date","Authorised for NDC","On CARP","Cooperative approach","Serial number","Authorisation link"]];
+  for(const row of [7,8,12]){
+    for(const y of YEARS){
+      for(const r of (A.contrib[row]?.[y]||[]))
+        L.push([row,y,r.prog,r.pid,r.vol,r.vin,r.ftd,r.ay,r.idt,r.ndc?"Yes":"No",r.carp?"Yes":"No",r.ca,r.sn,r.url||""]);
+    }
+  }
+  return L.map(r=>r.map(c=>{const s=String(c??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
+}
+function tabExport(A){
+  return `<div class="btnrow">
+      <button class="btn primary" id="x-sum">Copy structured summary</button>
+      <button class="btn" id="x-aud">Copy audit annex</button>
+      <button class="btn" id="x-view">Show audit annex</button>
+      <span id="x-msg" style="align-self:center;font-size:12px;color:var(--ok);font-weight:600"></span>
+    </div>
+    <pre class="out" id="x-out">${esc(buildCSV(A))}</pre>`;
+}
+function bindExport(A){
+  const out=document.getElementById("x-out"), msg=document.getElementById("x-msg");
+  const copy=(t,label)=>{ navigator.clipboard.writeText(t).then(()=>{msg.textContent=label+" copied";setTimeout(()=>msg.textContent="",2200);})
+    .catch(()=>{msg.textContent="Select the text below and copy";}); };
+  document.getElementById("x-sum").onclick=()=>{out.textContent=buildCSV(A);copy(buildCSV(A),"Structured summary");};
+  document.getElementById("x-aud").onclick=()=>{out.textContent=buildAudit(A);copy(buildAudit(A),"Audit annex");};
+  document.getElementById("x-view").onclick=()=>{out.textContent=buildAudit(A);};
+}
+
+/* ---------- controls ---------- */
+function renderControls(){
+  const cs=document.getElementById("f-country");
+  if(!cs.options.length){
+    cs.innerHTML=COUNTRIES.map(c=>`<option>${c}</option>`).join("");
+    cs.value=S.country;
+    cs.onchange=()=>{S.country=cs.value;S.sel=null;renderAll();};
+    const iy=document.getElementById("f-invyear");
+    iy.innerHTML=[2021,2022,2023,2024,2025].map(y=>`<option>${y}</option>`).join("");
+    iy.value=S.invYear;
+    iy.onchange=()=>{S.invYear=+iy.value;renderAll();};
+    document.getElementById("t-single").onclick=()=>{S.target="Single-year";renderAll();};
+    document.getElementById("t-multi").onclick=()=>{S.target="Multi-year";S.method="Annual Adjustments/Trajectory";renderAll();};
+    document.getElementById("s-all").onclick=()=>{S.scope="All";S.sel=null;renderAll();};
+    document.getElementById("s-carp").onclick=()=>{S.scope="CARP";S.sel=null;renderAll();};
+    document.getElementById("m-corrected").onclick=()=>{S.mode="corrected";renderAll();};
+    document.getElementById("m-compat").onclick=()=>{S.mode="compat";renderAll();};
+    ["detail","scope","assume","export"].forEach(k=>
+      document.getElementById("tab-"+k).onclick=()=>{S.tab=k;renderTab(engine(S,S.mode));});
+    document.getElementById("ds-meta").innerHTML=
+      `Gold Standard and Verra v1.0<br>Cutoff ${DATA.cutoff}<br>${DATA.n} credit blocks, ${COUNTRIES.length} host countries`;
+  }
+  const ms=document.getElementById("f-method");
+  const opts=S.target==="Single-year"?["Averaging","Annual Adjustments/Trajectory"]:["Annual Adjustments/Trajectory"];
+  ms.innerHTML=opts.map(o=>`<option>${o}</option>`).join("");
+  if(!opts.includes(S.method)) S.method=opts[opts.length-1];
+  ms.value=S.method;
+  ms.onchange=()=>{S.method=ms.value;renderAll();};
+
+  document.getElementById("t-single").setAttribute("aria-pressed",String(S.target==="Single-year"));
+  document.getElementById("t-multi").setAttribute("aria-pressed",String(S.target==="Multi-year"));
+  document.getElementById("s-all").setAttribute("aria-pressed",String(S.scope==="All"));
+  document.getElementById("s-carp").setAttribute("aria-pressed",String(S.scope==="CARP"));
+  document.getElementById("m-corrected").setAttribute("aria-pressed",String(S.mode==="corrected"));
+  document.getElementById("m-compat").setAttribute("aria-pressed",String(S.mode==="compat"));
+
+  const pool=ROWS.filter(r=>r.cty===S.country);
+  const vol=pool.reduce((a,r)=>a+r.vol,0);
+  const projects=new Set(pool.map(r=>r.pid)).size;
+  document.getElementById("country-meta").textContent=
+    `${pool.length} credit blocks, ${projects} projects, ${fmt(vol)} tCO2eq authorised.`;
+  const onCarp=pool.filter(r=>r.carp).length;
+  document.getElementById("scope-hint").textContent=
+    `${onCarp} of ${pool.length} blocks for ${S.country} sit under an authorisation uploaded to the CARP.`;
+}
+
+function renderAll(opt){
+  renderControls();
+  const A=renderSummary();
+  renderAlerts(A);
+  renderTab(A);
+  if(opt&&opt.keepFocus){
+    const [r,y]=opt.keepFocus.split("-");
+    const el=document.querySelector(`input[data-row="${r}"][data-year="${y}"]`);
+    if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}
+  }
+}
+renderAll();
+</script>

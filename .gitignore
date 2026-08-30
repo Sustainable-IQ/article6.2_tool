@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+.DS_Store
+
+# macOS / Google Drive artifacts
+Icon?
+._*

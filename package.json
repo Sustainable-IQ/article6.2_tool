@@ -1,0 +1,19 @@
+{
+  "name": "article6-ca-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Article 6.2 corresponding adjustments workbench. Cloudflare Worker plus static front end, no runtime dependencies.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create article6",
+    "db:migrate": "wrangler d1 execute article6 --remote --file=./migrations/0001_schema.sql",
+    "db:seed": "wrangler d1 execute article6 --remote --file=./migrations/0002_seed_2026-08-14.sql",
+    "db:local": "wrangler d1 execute article6 --local --file=./migrations/0001_schema.sql && wrangler d1 execute article6 --local --file=./migrations/0002_seed_2026-08-14.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

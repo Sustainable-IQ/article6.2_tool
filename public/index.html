@@ -1,0 +1,977 @@
+<title>Corresponding Adjustments Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#EDF0F4; --surface:#FFFFFF; --surface-2:#F6F8FA; --surface-3:#EEF2F6;
+  --ink:#0F1722; --ink-2:#4A5666; --ink-3:#778494;
+  --line:#D8DFE8; --line-2:#E9EEF4;
+  --accent:#0B5C8A; --accent-soft:#E1EDF5; --accent-ink:#08425F;
+  --warn:#8A5A08; --warn-soft:#FAF0DB;
+  --crit:#98241A; --crit-soft:#FAE7E4;
+  --ok:#15603A; --ok-soft:#E2F0E8;
+  --shadow:0 1px 2px rgba(15,23,34,.05),0 10px 26px -14px rgba(15,23,34,.20);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --on-accent:#FFFFFF;
+  /* chart series, validated for CVD separation against the light surface */
+  --s1:#0B5C8A; --s2:#C2620F; --grid:#E4EAF1;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0A0F15; --surface:#111921; --surface-2:#151E28; --surface-3:#1A242F;
+    --ink:#E8EFF6; --ink-2:#9CAABA; --ink-3:#6F7E8E;
+    --line:#212E3B; --line-2:#1A242F;
+    --accent:#5CADDD; --accent-soft:#102938; --accent-ink:#9ED0EA;
+    --warn:#D8A548; --warn-soft:#2A2211;
+    --crit:#E98A81; --crit-soft:#2C1613;
+    --ok:#71C08D; --ok-soft:#112419;
+    --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 26px -14px rgba(0,0,0,.7);
+    --on-accent:#07141C;
+    --s1:#3690C7; --s2:#CC7B28; --grid:#1E2A36;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0A0F15; --surface:#111921; --surface-2:#151E28; --surface-3:#1A242F;
+  --ink:#E8EFF6; --ink-2:#9CAABA; --ink-3:#6F7E8E;
+  --line:#212E3B; --line-2:#1A242F;
+  --accent:#5CADDD; --accent-soft:#102938; --accent-ink:#9ED0EA;
+  --warn:#D8A548; --warn-soft:#2A2211;
+  --crit:#E98A81; --crit-soft:#2C1613;
+  --ok:#71C08D; --ok-soft:#112419;
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 26px -14px rgba(0,0,0,.7);
+  --on-accent:#07141C;
+  --s1:#3690C7; --s2:#CC7B28; --grid:#1E2A36;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:600;letter-spacing:-.012em;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  padding:12px 22px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;gap:0}
+.brand h1{font-size:18px;line-height:1.2}
+.brand .sub{font-size:11px;color:var(--ink-3)}
+.spacer{margin-left:auto}
+.countrypick{display:flex;align-items:center;gap:9px;padding:5px 8px 5px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2)}
+.countrypick .eyebrow{white-space:nowrap}
+.countrypick select{border:0;background:transparent;font-family:var(--serif);font-size:19px;font-weight:600;padding:1px 4px;cursor:pointer;max-width:210px}
+.modeswitch{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.modeswitch button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2)}
+.modeswitch button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.stamp{font-size:11px;color:var(--ink-3);text-align:right;line-height:1.4}
+.stamp b{color:var(--ink-2);font-weight:600}
+
+/* layout */
+.app{display:grid;grid-template-columns:312px minmax(0,1fr);align-items:start}
+@media (max-width:1080px){.app{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:18px 18px 40px;display:flex;flex-direction:column;gap:20px}
+@media (min-width:1081px){.rail{position:sticky;top:57px;max-height:calc(100vh - 57px);overflow-y:auto}}
+.railhead{padding-bottom:6px;border-bottom:1px solid var(--line-2)}
+.group{display:flex;flex-direction:column;gap:13px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.hint{font-size:11px;color:var(--ink-3);line-height:1.45}
+select.ctl{width:100%;padding:7px 9px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;font-size:13px}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface-2);padding:7px 5px;cursor:pointer;font-size:12px;font-weight:500;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.privacy{padding:10px 11px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink);font-size:11.5px;line-height:1.5}
+.metaline{font-size:11.5px;color:var(--ink-2);line-height:1.7}
+.metaline b{color:var(--ink);font-weight:600}
+
+/* main */
+.main{padding:18px 22px 60px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
+.kpi .k{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font-family:var(--serif);font-size:25px;font-weight:600;margin-top:4px;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11px;color:var(--ink-3);margin-top:3px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.phead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line-2)}
+.phead h2{font-size:15px}
+.phead .meta{margin-left:auto;font-size:11px;color:var(--ink-3)}
+.scroller{overflow-x:auto}
+
+table.grid{border-collapse:collapse;width:100%;min-width:840px}
+table.grid th,table.grid td{border-bottom:1px solid var(--line-2);text-align:right;padding:0}
+table.grid thead th{background:var(--surface);padding:8px 11px;font-size:10px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line)}
+table.grid thead th.lbl,table.grid td.lbl{text-align:left;width:37%;min-width:290px}
+.rowlabel{display:flex;gap:9px;align-items:flex-start;padding:8px 11px;text-align:left}
+.rownum{flex:none;width:21px;height:19px;display:grid;place-items:center;border-radius:4px;background:var(--surface-3);
+  font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.rowname{display:block;font-size:12.5px;font-weight:600;line-height:1.35;cursor:help}
+.rowsrc{display:block;font-size:10px;color:var(--ink-3);margin-top:2px;font-family:var(--mono);letter-spacing:.02em}
+tr.inputrow .rownum{background:var(--accent-soft);color:var(--accent-ink)}
+tr.emph td{background:var(--surface-2)}
+tr.emph .rowname{font-weight:700}
+tr.off .cell{opacity:.3}
+tr.off .cell input{pointer-events:none}
+.cell{padding:7px 11px;font-variant-numeric:tabular-nums;font-size:13.5px;white-space:nowrap}
+.cell.calc{cursor:pointer}
+.cell.calc:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.cell.sel{background:var(--accent);color:var(--on-accent)}
+.cell.dim{color:var(--ink-3)}
+.cell.diff{box-shadow:inset 0 -2px 0 var(--warn)}
+.cell.diff::after{content:"";display:inline-block;width:0}
+.cell input{width:100%;max-width:110px;text-align:right;padding:5px 7px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:5px;font-variant-numeric:tabular-nums;font-size:12.5px}
+.cell input:hover,.cell input:focus{border-color:var(--accent)}
+
+/* checks */
+.checks{display:flex;flex-direction:column;gap:7px}
+.chk{display:grid;grid-template-columns:3px minmax(0,1fr);gap:12px;background:var(--surface);border:1px solid var(--line);
+  border-radius:7px;padding:10px 13px;box-shadow:var(--shadow);align-items:stretch}
+.chk .sev{border-radius:2px;background:var(--ink-3)}
+.chk.crit .sev{background:var(--crit)} .chk.crit .t{color:var(--crit)}
+.chk.warn .sev{background:var(--warn)} .chk.warn .t{color:var(--warn)}
+.chk.info .sev{background:var(--accent)} .chk.info .t{color:var(--accent-ink)}
+.chk.ok   .sev{background:var(--ok)}   .chk.ok   .t{color:var(--ok)}
+.chk .t{font-size:12px;font-weight:700;margin-bottom:2px}
+.chk .b{font-size:12.3px;color:var(--ink-2);line-height:1.5}
+.chk .b b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line-2);padding:0 15px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;cursor:pointer;padding:11px 11px;font-size:12.5px;font-weight:600;
+  color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabbody{padding:15px}
+
+table.data{border-collapse:collapse;width:100%;font-size:12.2px}
+table.data th{text-align:left;padding:7px 9px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data th.r,table.data td.r{text-align:right}
+table.data td{padding:6px 9px;border-bottom:1px solid var(--line-2);vertical-align:top}
+table.data tbody tr.clickable{cursor:pointer}
+table.data tbody tr.clickable:hover td{background:var(--surface-2)}
+table.data td.sn{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);word-break:break-all;max-width:250px}
+table.data tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:0;padding:9px}
+.chip{display:inline-block;padding:1px 7px;border-radius:100px;font-size:10.5px;font-weight:600;
+  background:var(--surface-3);color:var(--ink-2);white-space:nowrap}
+.chip.gs{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.vr{background:var(--ok-soft);color:var(--ok)}
+.bar{height:5px;border-radius:3px;background:var(--surface-3);overflow:hidden;min-width:56px}
+.bar > i{display:block;height:100%;background:var(--accent)}
+.empty{padding:26px 6px;text-align:center;color:var(--ink-3);font-size:12.5px}
+.note{font-size:12.3px;color:var(--ink-2);line-height:1.6;max-width:78ch}
+.quote{border-left:2px solid var(--line);padding-left:11px;margin-top:6px;font-size:12px;color:var(--ink-2);font-style:italic}
+.btn{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:7px 12px;border-radius:6px;
+  cursor:pointer;font-size:12.3px;font-weight:600}
+.btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+pre.out{margin:0;padding:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:6px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.55;max-height:330px;overflow:auto;white-space:pre;color:var(--ink-2)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}
+.filters select{padding:5px 7px;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;font-size:12px}
+.foot{padding:16px 22px 44px;font-size:11.3px;color:var(--ink-3);line-height:1.65;border-top:1px solid var(--line)}
+.foot b{color:var(--ink-2);font-weight:600}
+
+/* demonstration ribbon */
+.ribbon{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 22px;
+  background:var(--warn-soft);color:var(--warn);font-size:11.5px;font-weight:600;
+  border-bottom:1px solid var(--line)}
+.ribbon span.reg{font-weight:400;color:var(--ink-2)}
+
+/* the case panel */
+.case{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:16px 18px}
+.case h2{font-size:17px;margin-bottom:4px}
+.case .lede{font-size:12.8px;color:var(--ink-2);line-height:1.6;max-width:88ch}
+.claims{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:15px}
+.claim{border-top:2px solid var(--accent);padding-top:9px}
+.claim .ct{font-size:12.4px;font-weight:700;line-height:1.35}
+.claim .cd{font-size:11.8px;color:var(--ink-2);line-height:1.5;margin-top:4px}
+.claim .cd b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* charts */
+.figure{margin:0 0 22px}
+.figcap{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:3px}
+.figcap h3{font-size:14.5px}
+.figsub{font-size:12.2px;color:var(--ink-2);line-height:1.55;max-width:82ch;margin-bottom:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{font-family:var(--sans);fill:var(--ink-3)}
+.chart .axv{font-size:10px;font-variant-numeric:tabular-nums}
+.chart .axc{font-size:11px;fill:var(--ink-2)}
+.chart .axc.on{fill:var(--ink);font-weight:700}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart .mk{cursor:default}
+.chart .mk:hover{opacity:.82}
+.chart .vlab{font-size:10px;font-weight:600;fill:var(--ink-2);font-variant-numeric:tabular-nums}
+.tip{position:fixed;z-index:100;pointer-events:none;opacity:0;transition:opacity .1s;
+  background:var(--ink);color:var(--surface);padding:7px 10px;border-radius:6px;font-size:11.5px;
+  line-height:1.45;box-shadow:var(--shadow);max-width:250px}
+.tip b{font-variant-numeric:tabular-nums}
+.tip.on{opacity:1}
+details.tbl{margin-top:8px}
+details.tbl summary{font-size:11.5px;color:var(--ink-3);cursor:pointer;font-weight:600}
+details.tbl[open] summary{margin-bottom:8px}
+</style>
+
+<div class="ribbon">
+  Demonstration
+  <span class="reg">Built by SustainableIQ to show what Article 6.2 reporting looks like as a web tool rather than a spreadsheet.
+  Populated with the Gold Standard and Verra published snapshot of 14 August 2026. Not an official tool and not a substitute for a Party's own records.</span>
+</div>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Corresponding Adjustments Workbench</h1>
+    <span class="sub">Article 6.2 structured summary for the 2026 Biennial Transparency Report</span>
+  </div>
+  <div class="countrypick">
+    <span class="eyebrow">Party</span>
+    <select id="f-country" aria-label="Host country"></select>
+  </div>
+  <div class="spacer"></div>
+  <div class="modeswitch" role="group" aria-label="Calculation mode">
+    <button id="m-corrected" aria-pressed="true">Corrected</button>
+    <button id="m-compat" aria-pressed="false">Workbook v1</button>
+  </div>
+  <div class="stamp">Data as of <b id="stamp-date"></b><br><span id="stamp-src"></span></div>
+</div>
+
+<div class="app">
+  <aside class="rail">
+    <div class="group">
+      <div class="railhead"><span class="eyebrow">Accounting basis</span></div>
+      <div class="field">
+        <label>NDC target type</label>
+        <div class="seg" role="group">
+          <button id="t-single" aria-pressed="true">Single-year</button>
+          <button id="t-multi" aria-pressed="false">Multi-year</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-method">Accounting method</label>
+        <select class="ctl" id="f-method"></select>
+        <span class="hint">Decision 2/CMA.3, annex, paragraph 7(a).</span>
+      </div>
+      <div class="field">
+        <label for="f-invyear">Latest GHG inventory year in BTR 2026</label>
+        <select class="ctl" id="f-invyear"></select>
+      </div>
+      <div class="field">
+        <label>Authorisation scope</label>
+        <div class="seg" role="group">
+          <button id="s-all" aria-pressed="true">All</button>
+          <button id="s-carp" aria-pressed="false">On the CARP</button>
+        </div>
+        <span class="hint" id="scope-hint"></span>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="railhead"><span class="eyebrow">This Party</span></div>
+      <div class="metaline" id="country-meta"></div>
+    </div>
+
+    <div class="group">
+      <div class="railhead"><span class="eyebrow">Dataset</span></div>
+      <div class="metaline" id="ds-meta"></div>
+      <div class="privacy">Figures you type stay in this browser. Nothing is uploaded, stored, or transmitted.</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="case">
+      <h2>The same job, done by software instead of a spreadsheet</h2>
+      <p class="lede">Gold Standard and Verra consolidated every mitigation outcome authorised under either programme
+      and shipped it as an Excel workbook so that fourteen Parties can fill in Table 4 of the annex to Decision 5/CMA.3.
+      The data work is theirs. What follows is the same calculation, verified figure for figure against their file,
+      in a form the spreadsheet cannot take.</p>
+      <div class="claims" id="claims"></div>
+    </section>
+
+    <div class="kpis" id="kpis"></div>
+    <div class="checks" id="checks"></div>
+
+    <section class="panel">
+      <div class="phead">
+        <h2>Structured summary</h2>
+        <span class="meta">Table 4, annex to Decision 5/CMA.3. Tonnes CO<sub>2</sub>eq. Shaded row numbers are your inputs; select any calculated figure to trace it.</span>
+      </div>
+      <div class="scroller"><table class="grid" id="summary"></table></div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs" role="tablist">
+        <button id="tab-evidence" aria-selected="true">What the spreadsheet hides</button>
+        <button id="tab-detail" aria-selected="false">Trace</button>
+        <button id="tab-scenarios" aria-selected="false">Scenarios</button>
+        <button id="tab-blocks" aria-selected="false">Credit blocks</button>
+        <button id="tab-parties" aria-selected="false">All Parties</button>
+        <button id="tab-notes" aria-selected="false">Assumptions and notes</button>
+        <button id="tab-export" aria-selected="false">Export</button>
+      </div>
+      <div class="tabbody" id="tabbody"></div>
+    </section>
+  </main>
+</div>
+
+<div class="foot">
+  <b>Demonstrator.</b> Calculation engine reconciled cell for cell against the Gold Standard and Verra workbook
+  <span style="font-family:var(--mono)">Article-6.2-CA-Reporting-Tool_v1.xlsx</span>, version 1.0, 20 August 2026, data cutoff 14 August 2026.
+  <b>Workbook v1</b> mode reproduces that file exactly. <b>Corrected</b> mode applies the fixes listed under Assumptions and outlines every cell where the two diverge.
+  Not an authoritative record. Parties must validate against their own records, the terms of each authorisation, and any guidance from their designated national authority.
+</div>
+
+<script>
+/* Snapshot embedded at build time. When this page is served by the Cloudflare Worker,
+   /api/dataset returns the current snapshot from D1 and supersedes the embedded copy. */
+const EMBEDDED = {"cutoff":"2026-08-14","version":"1.0","n":601,"d":{"prog":["GS","Verra"],"cty":["Benin","Cambodia","Gambia","Lao","Madagascar","Malawi","Morocco","Nigeria","Rwanda","Sierra Leone","Tanzania","Togo","Uzbekistan","Zimbabwe"],"ftd":["Authorisation","First international transfer","Issuance"],"ca":["CA0009","CA0010","CA0011","CA0013","CA0042","CA0043","CA0044","CA0045","CA0046","CA0047","CA0050","CA0051","NA"],"url":["http://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202607311234---LoA_VCS2707ICS%20Distribution%20for%20Improving%20lifestyle%20of%20Malagasy%20Community%20.PDF","http://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202607311234---LoA_VCS3096Uplifting%20of%20Malagasy%20communities%20by%20distributing%20efficient%20cooking%20appliance%20project%20%20(1).PDF","https://assurance-platform.goldstandard.org/project-documents/GS1023","https://assurance-platform.goldstandard.org/project-documents/GS10823","https://assurance-platform.goldstandard.org/project-documents/GS11098","https://assurance-platform.goldstandard.org/project-documents/GS11551","https://assurance-platform.goldstandard.org/project-documents/GS11639","https://assurance-platform.goldstandard.org/project-documents/GS11677","https://assurance-platform.goldstandard.org/project-documents/GS11732","https://assurance-platform.goldstandard.org/project-documents/GS11968","https://assurance-platform.goldstandard.org/project-documents/GS11972","https://assurance-platform.goldstandard.org/project-documents/GS834","https://bit.ly/UpEnergy-Group2","https://climatecouncil.gov.ng/wp-content/uploads/2026/07/LOA-GS-7312-Toyola-Energy-Services-Limited.pdf","https://climatecouncil.gov.ng/wp-content/uploads/2026/07/LOA-GS10789-Burn-Manufacturing.pdf","https://climatecouncil.gov.ng/wp-content/uploads/2026/07/LOA-GS11210-UpEnergy-Group.pdf","https://climatecouncil.gov.ng/wp-content/uploads/2026/07/LOA-GS11729-Agasco-Limited.pdf","https://climatecouncil.gov.ng/wp-content/uploads/2026/07/Nigeria-LOA.pdf","https://registry.verra.org/verra/public/program/VCS/projects/2311","https://registry.verra.org/verra/public/program/VCS/projects/2312","https://registry.verra.org/verra/public/program/VCS/projects/2313","https://registry.verra.org/verra/public/program/VCS/projects/2314","https://registry.verra.org/verra/public/program/VCS/projects/2315","https://registry.verra.org/verra/public/program/VCS/projects/2685","https://registry.verra.org/verra/public/program/VCS/projects/2687","https://registry.verra.org/verra/public/program/VCS/projects/2688","https://registry.verra.org/verra/public/program/VCS/projects/2689","https://registry.verra.org/verra/public/program/VCS/projects/2690","https://registry.verra.org/verra/public/program/VCS/projects/2772","https://registry.verra.org/verra/public/program/VCS/projects/2773","https://registry.verra.org/verra/public/program/VCS/projects/2774","https://registry.verra.org/verra/public/program/VCS/projects/2775","https://registry.verra.org/verra/public/program/VCS/projects/2776","https://registry.verra.org/verra/public/program/VCS/projects/2777","https://registry.verra.org/verra/public/program/VCS/projects/2778","https://registry.verra.org/verra/public/program/VCS/projects/2779","https://registry.verra.org/verra/public/program/VCS/projects/2780","https://registry.verra.org/verra/public/program/VCS/projects/2794","https://registry.verra.org/verra/public/program/VCS/projects/2825","https://registry.verra.org/verra/public/program/VCS/projects/2826","https://registry.verra.org/verra/public/program/VCS/projects/2827","https://registry.verra.org/verra/public/program/VCS/projects/2924","https://registry.verra.org/verra/public/program/VCS/projects/3204","https://registry.verra.org/verra/public/program/VCS/projects/3699","https://registry.verra.org/verra/public/program/VCS/projects/4150","https://registry.verra.org/verra/public/program/VCS/projects/4151","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202505150951---VCS%202925.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202505150951---VCS%203052.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202512191359---MEF-EKS_eng.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202602110908---Project%204000%20LoA%20.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202602110909---LOA%20Del_GOSL.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202604041010---United%20Republic%20of%20Tanzania%20-%20Letter%20of%20Authorization%201.pdf","https://submissions.unfccc.int/api/files/download?serverRelativeFilePath=/submissions/Archive/202604041010---United%20Republic%20of%20Tanzania%20-%20Letter%20of%20Authorization%202.pdf"]},"c":{"prog":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"pid":["11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11732","11137","11137","11136","11136","11135","11135","11134","11134","11133","11133","11098","11098","10897","10823","10823","10823","11137","11137","11136","11136","11135","11135","11134","11134","11133","11133","11098","11098","11639","11639","4261","4261","4259","4259","1060","1060","10897","11932","11932","11932","11931","11931","11931","11930","11930","11930","11929","11929","11929","11928","11928","11927","11927","11926","11926","11926","11925","11925","11924","11924","11923","11923","11922","11922","11921","11921","11920","11920","11919","11919","11916","11916","2437","2437","1352","11972","11972","11968","11968","2437","2437","1353","1353","1352","1352","1162","11137","11137","11136","11136","11135","11135","11134","11134","11133","11133","11098","11098","10897","6272","4261","4261","4259","4259","1060","1060","6271","11968","11968","11972","11972","11906","11906","11932","11932","11931","11931","11930","11930","11929","11929","11928","11928","11927","11927","11926","11926","11925","11925","11924","11924","11923","11923","11922","11922","11921","11921","11920","11920","11919","11919","11918","11918","11917","11917","11916","11916","11915","11915","11914","11914","11913","11913","11912","11912","11911","11911","11910","11910","11909","11909","11907","11907","11908","11908","11905","11904","11903","11902","4261","4259","1060","11098","11098","11137","11136","11136","11135","11134","11134","11133","11133","10823","2437","1353","1352","1162","10897","11551","12144","12144","11551","11551","11551","11551","11551","11551","11551","11551","11551","11551","11551","11551","11551","11551","2311","2311","2311","2311","2311","2311","2311","2311","2311","2311","2312","2312","2312","2312","2312","2312","2312","2313","2313","2313","2313","2313","2314","2314","2314","2314","2314","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2315","2673","2673","2673","2676","2676","2676","2685","2685","2685","2685","2685","2687","2687","2687","2688","2688","2688","2688","2688","2689","2689","2689","2689","2689","2690","2690","2690","2690","2690","2690","2707","2707","2707","2707","2707","2707","2772","2772","2772","2772","2773","2773","2773","2773","2774","2774","2774","2774","2774","2775","2775","2775","2775","2775","2775","2775","2775","2775","2775","2775","2775","2775","2776","2776","2776","2777","2777","2777","2777","2777","2777","2778","2778","2778","2778","2779","2779","2779","2779","2779","2779","2779","2780","2780","2780","2780","2794","2794","2794","2794","2794","2794","2794","2794","2825","2825","2825","2825","2825","2825","2826","2826","2826","2826","2826","2827","2827","2827","2827","2827","2827","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2924","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","2925","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3052","3096","3096","3096","3096","3096","3204","3204","3204","3204","3204","3204","3204","3204","3699","3699","3699","3699","3699","3699","3699","3699","3699","3699","3837","3837","4000","4000","4000","4000","4000","4000","4000","4000","4000","4000","4000","4000","4000","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4150","4151","4151","4151","4151","4151","4151","4151","4531","4531","4531","4531","4531","4531","4531","4531","4531","4531","11729","11729","11210","11210","7312","11671","11671","11671","11671","11671","11671","12282","11741","11741","12295","12295"],"vol":[100,592,5054,24946,15000,5000,4408,2061,20306,2000,1000,806,194,2000,30000,1900,21748,806,2000,946,19000,1000,20000,57101,24274,59072,25133,60518,25873,56346,24062,55296,23520,59701,25461,2940,2352,2057,341,31532,24491,32562,25291,33357,25908,31214,24243,30558,23735,32675,25379,18045,20657,18784,19094,17746,18040,17422,17711,2749,5024,21554,1431,5507,22810,1514,4911,23315,1548,1648,9817,653,3826,267,14111,985,1335,22671,1532,1129,125,21073,1639,17430,1485,14852,1423,9091,942,11898,1476,8599,1414,5119,1493,2475,3017,288,48488,265447,52345,254402,2691,2736,2795,2842,3387,3443,2335,32297,25208,33587,26214,33268,25965,32196,25128,31559,24632,33678,26286,2933,378,19944,20274,19432,19755,19065,19381,89848,40506,153650,12790,179284,1560,39932,28965,41294,30651,42830,31331,42830,13225,18893,5802,7644,21329,27565,31009,42830,2494,3480,32267,42830,29239,41106,28018,39394,18570,26109,29059,40855,27839,39138,26515,37280,24412,39522,29418,41359,31061,42830,20474,32220,22473,40946,19480,41163,15244,39643,12597,40649,6534,39937,3859,42830,2184,17967,14349,856,15246,5692,18707,18104,17753,25891,4420,22686,30334,2959,22813,29667,5210,29373,5158,667,2068,2750,2602,2460,2827,24263,171059,96913,223923,10532,13083,3356,178035,199842,17,38550,31490,68906,1000,6693,1193,3000,8750,6652,8476,12503,25000,5357,10372,4256,10372,4112,9314,7081,20888,9914,30802,6458,16580,9293,7065,22002,31403,31403,7310,9615,22285,31600,31600,10629,8082,24199,2027,838,3122,3392,269,1365,20299,1365,3661,15000,3661,9152,1473,3353,20067,16768,44745,55255,42504,9904,7530,22965,32517,32517,8173,10749,24544,7538,9914,22603,31851,21851,10860,8257,24314,32631,32902,7555,9936,908,18171,4106,32585,35604,6289,37331,14396,10000,3168,30705,15310,17581,30705,30753,30753,30753,15334,31003,5181,15458,19515,11488,20255,4852,2020,3323,1529,3323,12724,17453,4306,8025,12152,1000,4694,23363,31009,15462,7704,15755,25000,6598,31326,272,6530,8239,29619,16798,18284,1251,10930,25000,5465,1251,15190,14819,5468,1941,29720,285563,21376,214437,1,1,91750,9999,1,19289,868,10554,30711,15313,30711,31008,25000,6008,15462,31008,5000,27859,16383,32859,5125,27734,50000,5554,44446,94446,134781,18650,9665,174678,65297,38025,16000,150000,12000,38000,125000,125000,60000,150000,200000,195438,350000,100000,350000,50000,150000,45962,10000,4038,25000,488,50000,89774,250000,58134,60000,150000,41866,60000,10000,266611,3389,16611,10000,88387,5000,36613,62000,50000,40000,90000,1000,1879,25000,1000,25000,25000,18121,2000,1000,33462,6638,100,61900,38000,26371,26263,23953,2850,20779,5554,19209,50000,5172,6105,54651,10205,23867,50000,10000,12500,681008,25000,37500,615494,250513,3983,48352,100,1978,36895,84114,15886,213,2000,4757,23000,7000,1000,1194,106,487,20000,52606,10000,47394,40654,63640,77706,126701,195,237147,2452,195,102367,10000,3000,12500,147,12353,464213,104960,1,18000,1000,12000,9000,9462,29746,117099,82901,537,32787,10649,5259,650,265576,7884,6182,25261,225398,5267,2322,3733,623,45000,24931,3300,4998,12754,87290,50000,210000,50000,42319,186557,238,79763,238,7524,10000,56250,72745,7116,2685,18028,75000,2,6528,12395,3457,51972,20000,10000,506,45000,2000,5000,1000,1000,7000,1300,642,700,163000,72000,7000,6151,43360,1828,47587,932,8936,22271,83,300000,48000,259184,89854,10146,400000,151917,214807,94092,12339,25844,25282,6687,955324,4685,59898,312102,466018,92418,137996,117053,58796,11104,94216,14721],"sn":["GS1-1-TZ-GS11732-16-2022-25700-1-100","GS1-1-TZ-GS11732-16-2023-28108-103008-103599","GS1-1-TZ-GS11732-16-2023-28108-2702-7755","GS1-1-TZ-GS11732-16-2023-28108-7756-32701","GS1-1-TZ-GS11732-16-2023-28108-118008-133007","GS1-1-TZ-GS11732-16-2023-28108-103600-108599","GS1-1-TZ-GS11732-16-2023-28108-108600-113007","GS1-1-TZ-GS11732-16-2023-28108-133008-135068","GS1-1-TZ-GS11732-16-2023-28108-32702-53007","GS1-1-TZ-GS11732-16-2024-28109-2526-4525","GS1-1-TZ-GS11732-16-2024-28109-526-1525","GS1-1-TZ-GS11732-16-2022-25700-2001-2806","GS1-1-TZ-GS11732-16-2023-28108-115814-116007","GS1-1-TZ-GS11732-16-2023-28108-113814-115813","GS1-1-TZ-GS11732-16-2023-28108-73008-103007","GS1-1-TZ-GS11732-16-2022-25700-101-2000","GS1-1-TZ-GS11732-16-2024-28109-4526-26273","GS1-1-TZ-GS11732-16-2023-28108-113008-113813","GS1-1-TZ-GS11732-16-2023-28108-116008-118007","GS1-1-TZ-GS11732-16-2022-28107-408-1353","GS1-1-TZ-GS11732-16-2022-28107-1354-20353","GS1-1-TZ-GS11732-16-2024-28109-1526-2525","GS1-1-TZ-GS11732-16-2023-28108-53008-73007","GS1-1-RW-GS11137-16-2025-30526-1-57101","GS1-1-RW-GS11137-16-2024-30525-1-24274","GS1-1-RW-GS11136-16-2025-30524-1-59072","GS1-1-RW-GS11136-16-2024-30523-1-25133","GS1-1-RW-GS11135-16-2025-30522-1-60518","GS1-1-RW-GS11135-16-2024-30521-1-25873","GS1-1-RW-GS11134-16-2025-30520-1-56346","GS1-1-RW-GS11134-16-2024-30519-1-24062","GS1-1-RW-GS11133-16-2025-30518-1-55296","GS1-1-RW-GS11133-16-2024-30517-1-23520","GS1-1-RW-GS11098-16-2025-30516-1-59701","GS1-1-RW-GS11098-16-2024-30515-1-25461","GS1-1-RW-GS10897-16-2024-30388-1-2940","GS1-1-MA-GS10823-2-2023-29414-1-2352","GS1-1-MA-GS10823-2-2022-29413-1-2057","GS1-1-MA-GS10823-2-2021-29412-1-341","GS1-1-RW-GS11137-16-2024-29348-1-31532","GS1-1-RW-GS11137-16-2023-29347-1-24491","GS1-1-RW-GS11136-16-2024-29346-1-32562","GS1-1-RW-GS11136-16-2023-29345-1-25291","GS1-1-RW-GS11135-16-2024-29344-1-33357","GS1-1-RW-GS11135-16-2023-29343-1-25908","GS1-1-RW-GS11134-16-2024-29342-1-31214","GS1-1-RW-GS11134-16-2023-29341-1-24243","GS1-1-RW-GS11133-16-2024-29340-1-30558","GS1-1-RW-GS11133-16-2023-29339-1-23735","GS1-1-RW-GS11098-16-2024-29338-1-32675","GS1-1-RW-GS11098-16-2023-29337-1-25379","GS1-1-RW-GS11639-16-2024-28806-1-18045","GS1-1-RW-GS11639-16-2023-28805-1-20657","GS1-1-RW-GS4261-16-2023-28720-1-18784","GS1-1-RW-GS4261-16-2022-28719-1-19094","GS1-1-RW-GS4259-16-2023-28718-1-17746","GS1-1-RW-GS4259-16-2022-28717-1-18040","GS1-1-RW-GS1060-16-2023-28716-1-17422","GS1-1-RW-GS1060-16-2022-28715-1-17711","GS1-1-RW-GS10897-16-2023-28712-1-2749","GS1-1-MW-GS11932-16-2024-28269-1-5024","GS1-1-MW-GS11932-16-2023-28268-1-21554","GS1-1-MW-GS11932-16-2022-28267-1-1431","GS1-1-MW-GS11931-16-2024-28266-1-5507","GS1-1-MW-GS11931-16-2023-28265-1-22810","GS1-1-MW-GS11931-16-2022-28264-1-1514","GS1-1-MW-GS11930-16-2024-28263-1-4911","GS1-1-MW-GS11930-16-2023-28262-1-23315","GS1-1-MW-GS11930-16-2022-28261-1-1548","GS1-1-MW-GS11929-16-2024-28260-1-1648","GS1-1-MW-GS11929-16-2023-28259-1-9817","GS1-1-MW-GS11929-16-2022-28258-1-653","GS1-1-MW-GS11928-16-2023-28257-1-3826","GS1-1-MW-GS11928-16-2022-28256-1-267","GS1-1-MW-GS11927-16-2023-28255-1-14111","GS1-1-MW-GS11927-16-2022-28254-1-985","GS1-1-MW-GS11926-16-2024-28253-1-1335","GS1-1-MW-GS11926-16-2023-28252-1-22671","GS1-1-MW-GS11926-16-2022-28251-1-1532","GS1-1-MW-GS11925-16-2023-28250-1-1129","GS1-1-MW-GS11925-16-2022-28249-1-125","GS1-1-MW-GS11924-16-2023-28248-1-21073","GS1-1-MW-GS11924-16-2022-28247-1-1639","GS1-1-MW-GS11923-16-2023-28246-1-17430","GS1-1-MW-GS11923-16-2022-28245-1-1485","GS1-1-MW-GS11922-16-2023-28244-1-14852","GS1-1-MW-GS11922-16-2022-28243-1-1423","GS1-1-MW-GS11921-16-2023-28242-1-9091","GS1-1-MW-GS11921-16-2022-28241-1-942","GS1-1-MW-GS11920-16-2023-28240-1-11898","GS1-1-MW-GS11920-16-2022-28239-1-1476","GS1-1-MW-GS11919-16-2023-28238-1-8599","GS1-1-MW-GS11919-16-2022-28237-1-1414","GS1-1-MW-GS11916-16-2023-28236-1-5119","GS1-1-MW-GS11916-16-2022-28235-1-1493","GS1-1-NG-GS2437-16-2023-27925-1-2475","GS1-1-NG-GS2437-16-2022-27924-1-3017","GS1-1-NG-GS1352-16-2022-27923-1-288","GS1-1-TG-GS11972-16-2024-27732-1-48488","GS1-1-TG-GS11972-16-2023-27731-1-265447","GS1-1-BJ-GS11968-16-2024-27730-1-52345","GS1-1-BJ-GS11968-16-2023-27729-1-254402","GS1-1-NG-GS2437-16-2022-27684-1-2691","GS1-1-NG-GS2437-16-2021-27683-1-2736","GS1-1-NG-GS1353-16-2022-27682-1-2795","GS1-1-NG-GS1353-16-2021-27681-1-2842","GS1-1-NG-GS1352-16-2022-27680-1-3387","GS1-1-NG-GS1352-16-2021-27679-1-3443","GS1-1-NG-GS1162-16-2021-27678-1-2335","GS1-1-RW-GS11137-16-2023-27085-1-32297","GS1-1-RW-GS11137-16-2022-27084-1-25208","GS1-1-RW-GS11136-16-2023-27083-1-33587","GS1-1-RW-GS11136-16-2022-27082-1-26214","GS1-1-RW-GS11135-16-2023-27081-1-33268","GS1-1-RW-GS11135-16-2022-27079-1-25965","GS1-1-RW-GS11134-16-2023-27078-1-32196","GS1-1-RW-GS11134-16-2022-27077-1-25128","GS1-1-RW-GS11133-16-2023-27076-1-31559","GS1-1-RW-GS11133-16-2022-27075-1-24632","GS1-1-RW-GS11098-16-2023-27074-1-33678","GS1-1-RW-GS11098-16-2022-27073-1-26286","GS1-1-RW-GS10897-16-2022-26900-1-2933","GS1-1-RW-GS6272-16-2022-26709-1-378","GS1-1-RW-GS4261-16-2022-26667-1-19944","GS1-1-RW-GS4261-16-2021-26666-1-20274","GS1-1-RW-GS4259-16-2022-26665-1-19432","GS1-1-RW-GS4259-16-2021-26664-1-19755","GS1-1-RW-GS1060-16-2022-26663-1-19065","GS1-1-RW-GS1060-16-2021-26662-1-19381","GS1-1-RW-GS6271-16-2022-26661-1-89848","GS1-1-BJ-GS11968-16-2023-26658-1-40506","GS1-1-BJ-GS11968-16-2022-26657-1-153650","GS1-1-TG-GS11972-16-2023-26339-1-12790","GS1-1-TG-GS11972-16-2022-26338-1-179284","GS1-1-MW-GS11906-16-2022-25699-1-1560","GS1-1-MW-GS11906-16-2021-25698-1-39932","GS1-1-MW-GS11932-16-2022-25324-1-28965","GS1-1-MW-GS11932-16-2021-25323-1-41294","GS1-1-MW-GS11931-16-2022-25322-1-30651","GS1-1-MW-GS11931-16-2021-25321-1-42830","GS1-1-MW-GS11930-16-2022-25320-1-31331","GS1-1-MW-GS11930-16-2021-25319-1-42830","GS1-1-MW-GS11929-16-2022-25318-1-13225","GS1-1-MW-GS11929-16-2021-25317-1-18893","GS1-1-MW-GS11928-16-2022-25316-1-5802","GS1-1-MW-GS11928-16-2021-25315-1-7644","GS1-1-MW-GS11927-16-2022-25314-1-21329","GS1-1-MW-GS11927-16-2021-25313-1-27565","GS1-1-MW-GS11926-16-2022-25312-1-31009","GS1-1-MW-GS11926-16-2021-25311-1-42830","GS1-1-MW-GS11925-16-2022-25310-1-2494","GS1-1-MW-GS11925-16-2021-25309-1-3480","GS1-1-MW-GS11924-16-2022-25308-1-32267","GS1-1-MW-GS11924-16-2021-25307-1-42830","GS1-1-MW-GS11923-16-2022-25306-1-29239","GS1-1-MW-GS11923-16-2021-25305-1-41106","GS1-1-MW-GS11922-16-2022-25304-1-28018","GS1-1-MW-GS11922-16-2021-25303-1-39394","GS1-1-MW-GS11921-16-2022-25302-1-18570","GS1-1-MW-GS11921-16-2021-25301-1-26109","GS1-1-MW-GS11920-16-2022-25300-1-29059","GS1-1-MW-GS11920-16-2021-25299-1-40855","GS1-1-MW-GS11919-16-2022-25298-1-27839","GS1-1-MW-GS11919-16-2021-25297-1-39138","GS1-1-MW-GS11918-16-2022-25296-1-26515","GS1-1-MW-GS11918-16-2021-25295-1-37280","GS1-1-MW-GS11917-16-2022-25294-1-24412","GS1-1-MW-GS11917-16-2021-25293-1-39522","GS1-1-MW-GS11916-16-2022-25292-1-29418","GS1-1-MW-GS11916-16-2021-25291-1-41359","GS1-1-MW-GS11915-16-2022-25290-1-31061","GS1-1-MW-GS11915-16-2021-25289-1-42830","GS1-1-MW-GS11914-16-2022-25288-1-20474","GS1-1-MW-GS11914-16-2021-25287-1-32220","GS1-1-MW-GS11913-16-2022-25286-1-22473","GS1-1-MW-GS11913-16-2021-25285-1-40946","GS1-1-MW-GS11912-16-2022-25284-1-19480","GS1-1-MW-GS11912-16-2021-25283-1-41163","GS1-1-MW-GS11911-16-2022-25282-1-15244","GS1-1-MW-GS11911-16-2021-25281-1-39643","GS1-1-MW-GS11910-16-2022-25280-1-12597","GS1-1-MW-GS11910-16-2021-25279-1-40649","GS1-1-MW-GS11909-16-2022-25278-1-6534","GS1-1-MW-GS11909-16-2021-25277-1-39937","GS1-1-MW-GS11907-16-2022-25276-1-3859","GS1-1-MW-GS11907-16-2021-25275-1-42830","GS1-1-MW-GS11908-16-2022-25274-1-2184","GS1-1-MW-GS11908-16-2021-25273-1-17967","GS1-1-MW-GS11905-16-2021-25270-1-14349","GS1-1-MW-GS11904-16-2021-25269-1-856","GS1-1-MW-GS11903-16-2021-25268-1-15246","GS1-1-MW-GS11902-16-2021-25267-1-5692","GS1-1-RW-GS4261-16-2021-24945-1-18707","GS1-1-RW-GS4259-16-2021-24944-1-18104","GS1-1-RW-GS1060-16-2021-24943-1-17753","GS1-1-RW-GS11098-16-2022-24675-1-25891","GS1-1-RW-GS11098-16-2021-24674-1-4420","GS1-1-RW-GS11137-16-2022-24635-1-22686","GS1-1-RW-GS11136-16-2022-24634-1-30334","GS1-1-RW-GS11136-16-2021-24633-1-2959","GS1-1-RW-GS11135-16-2022-24632-1-22813","GS1-1-RW-GS11134-16-2022-24631-1-29667","GS1-1-RW-GS11134-16-2021-24630-1-5210","GS1-1-RW-GS11133-16-2022-24629-1-29373","GS1-1-RW-GS11133-16-2021-24628-1-5158","GS1-1-MA-GS10823-2-2021-24248-1-667","GS1-1-NG-GS2437-16-2021-24246-1-2068","GS1-1-NG-GS1353-16-2021-24245-1-2750","GS1-1-NG-GS1352-16-2021-24244-1-2602","GS1-1-NG-GS1162-16-2021-24243-1-2460","GS1-1-RW-GS10897-16-2021-23352-1-2827","GS1-1-ZW-GS11551-16-2023-30371-1-24263","GS1-1-ZW-GS12144-16-2024-30059-1-171059","GS1-1-ZW-GS12144-16-2023-30058-1-96913","GS1-1-ZW-GS11551-16-2024-30044-1-223923","GS1-1-ZW-GS11551-16-2022-30043-1-10532","GS1-1-ZW-GS11551-16-2022-29875-1-13083","GS1-1-ZW-GS11551-16-2021-29728-1-3356","GS1-1-ZW-GS11551-16-2023-29671-1-178035","GS1-1-ZW-GS11551-16-2023-29670-1-199842","GS1-1-ZW-GS11551-16-2022-29669-1-17","GS1-1-ZW-GS11551-16-2022-29668-1-38550","GS1-1-ZW-GS11551-16-2022-29428-1-31490","GS1-1-ZW-GS11551-16-2022-29427-1-68906","GS1-1-ZW-GS11551-16-2022-29426-1-1000","GS1-1-ZW-GS11551-16-2022-29088-1-6693","GS1-1-ZW-GS11551-16-2022-29087-1-1193","GS1-1-ZW-GS11551-16-2022-29086-1-3000","18783-910564676-910573425-VCS-VCU-842-VER-MG-3-2311-01012024-30042024-1","18786-910575139-910581790-VCS-VCU-842-VER-MG-3-2311-01102023-31122023-1","16744-789796272-789804747-VCS-VCU-842-VER-MG-3-2311-01012023-30092023-1","16744-789804748-789817250-VCS-VCU-842-VER-MG-3-2311-01012023-30092023-1","16346-757478893-757503892-VCS-VCU-842-VER-MG-3-2311-01012022-31122022-1","16346-757503893-757509249-VCS-VCU-842-VER-MG-3-2311-01012022-31122022-1","16345-757465110-757475481-VCS-VCU-842-VER-MG-3-2311-01012021-31122021-1","16345-757446351-757450606-VCS-VCU-842-VER-MG-3-2311-01012021-31122021-1","16345-757454719-757465090-VCS-VCU-842-VER-MG-3-2311-01012021-31122021-1","16345-757450607-757454718-VCS-VCU-842-VER-MG-3-2311-01012021-31122021-1","18780-910547494-910556807-VCS-VCU-842-VER-MG-3-2312-01012024-30042024-1","18782-910557595-910564675-VCS-VCU-842-VER-MG-3-2312-01102023-31122023-1","16745-789819583-789840470-VCS-VCU-842-VER-MG-3-2312-01012021-31122021-1","16745-789840471-789850384-VCS-VCU-842-VER-MG-3-2312-01012021-31122021-1","16746-789853808-789884609-VCS-VCU-842-VER-MG-3-2312-01012022-31122022-1","16747-789888033-789894490-VCS-VCU-842-VER-MG-3-2312-01012023-30092023-1","16747-789894491-789911070-VCS-VCU-842-VER-MG-3-2312-01012023-30092023-1","18776-910529315-910538607-VCS-VCU-842-VER-MG-3-2313-01012024-30042024-1","18778-910539394-910546458-VCS-VCU-842-VER-MG-3-2313-01102023-31122023-1","16759-790377358-790399359-VCS-VCU-842-VER-MG-3-2313-01012023-30092023-1","16599-776476838-776508240-VCS-VCU-842-VER-MG-3-2313-01012022-31122022-1","16600-776511731-776543133-VCS-VCU-842-VER-MG-3-2313-01012021-31122021-1","18774-910520972-910528281-VCS-VCU-842-VER-MG-3-2314-01102023-31122023-1","18772-910510544-910520158-VCS-VCU-842-VER-MG-3-2314-01012024-30042024-1","16750-789983855-790006139-VCS-VCU-842-VER-MG-3-2314-01012023-30092023-1","16748-789913631-789945230-VCS-VCU-842-VER-MG-3-2314-01012021-31122021-1","16749-789948743-789980342-VCS-VCU-842-VER-MG-3-2314-01012022-31122022-1","18768-910489866-910500494-VCS-VCU-842-VER-MG-3-2315-01012024-30042024-1","18770-910501393-910509474-VCS-VCU-842-VER-MG-3-2315-01102023-31122023-1","16911-800102461-800126659-VCS-VCU-842-VER-MG-3-2315-01012023-30092023-1","16347-757516019-757518045-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757519680-757520517-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757512897-757516018-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757520518-757523909-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757519411-757519679-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757518046-757519410-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757523910-757544208-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16347-757544209-757545573-VCS-VCU-842-VER-MG-3-2315-01012022-31122022-1","16348-757549235-757552895-VCS-VCU-842-VER-MG-3-2315-01012021-31122021-1","16348-757552896-757567895-VCS-VCU-842-VER-MG-3-2315-01012021-31122021-1","16348-757578521-757582181-VCS-VCU-842-VER-MG-3-2315-01012021-31122021-1","16348-757569369-757578520-VCS-VCU-842-VER-MG-3-2315-01012021-31122021-1","16348-757567896-757569368-VCS-VCU-842-VER-MG-3-2315-01012021-31122021-1","19168-929838017-929841369-VCS-VCU-7270-VER-NG-3-2673-01112022-31122022-1","19169-929841370-929861436-VCS-VCU-7270-VER-NG-3-2673-01012023-31122023-1","19170-929861437-929878204-VCS-VCU-7270-VER-NG-3-2673-01012024-31102024-1","19291-935773801-935818545-VCS-VCU-1289-VER-TZ-3-2676-01092022-31122022-1","19292-935818546-935873800-VCS-VCU-1289-VER-TZ-3-2676-01012023-31102023-1","19292-935873801-935916304-VCS-VCU-1289-VER-TZ-3-2676-01012023-31102023-1","18740-910102751-910112654-VCS-VCU-997-VER-MG-3-2685-01012024-30042024-1","18742-910113492-910121021-VCS-VCU-997-VER-MG-3-2685-01102023-31122023-1","16721-789365953-789388917-VCS-VCU-997-VER-MG-3-2685-01012023-30092023-1","16349-757585843-757618359-VCS-VCU-997-VER-MG-3-2685-01012022-31122022-1","16350-757621973-757654489-VCS-VCU-997-VER-MG-3-2685-01012021-31122021-1","18738-910093477-910101649-VCS-VCU-997-VER-MG-3-2687-01102023-31122023-1","18735-910080624-910091372-VCS-VCU-997-VER-MG-3-2687-01012024-30042024-1","16910-800075189-800099732-VCS-VCU-997-VER-MG-3-2687-01012023-30092023-1","18733-910072248-910079785-VCS-VCU-997-VER-MG-3-2688-01102023-31122023-1","18731-910061232-910071145-VCS-VCU-997-VER-MG-3-2688-01012024-30042024-1","16917-800232642-800255244-VCS-VCU-997-VER-MG-3-2688-01012023-30092023-1","16455-763048755-763080605-VCS-VCU-997-VER-MG-3-2688-01012021-31122021-1","16456-763094146-763115996-VCS-VCU-997-VER-MG-3-2688-01012022-31122022-1","18728-910041197-910052056-VCS-VCU-997-VER-MG-3-2689-01012024-30042024-1","18730-910052975-910061231-VCS-VCU-997-VER-MG-3-2689-01102023-31122023-1","16714-789117305-789141618-VCS-VCU-997-VER-MG-3-2689-01012023-30092023-1","16453-762975940-763008570-VCS-VCU-997-VER-MG-3-2689-04012021-31122021-1","16454-763012197-763045098-VCS-VCU-997-VER-MG-3-2689-01012022-31122022-1","17868-862109730-862117284-VCS-VCU-997-VER-MG-3-2690-01102023-31122023-1","17869-862118125-862128060-VCS-VCU-997-VER-MG-3-2690-01012024-30042024-1","16918-800257757-800258664-VCS-VCU-997-VER-MG-3-2690-01012023-30092023-1","16918-800258665-800276835-VCS-VCU-997-VER-MG-3-2690-01012023-30092023-1","16918-800276836-800280941-VCS-VCU-997-VER-MG-3-2690-01012023-30092023-1","16458-763155743-763188327-VCS-VCU-997-VER-MG-3-2690-01012022-31122022-1","19196-931473304-931508907-VCS-VCU-842-VER-MG-3-2707-01042023-31122023-1","19196-931508908-931515196-VCS-VCU-842-VER-MG-3-2707-01042023-31122023-1","19197-931519345-931556675-VCS-VCU-842-VER-MG-3-2707-01012024-31082024-1","15930-731309527-731323922-VCS-VCU-842-VER-MG-3-2707-30082022-31122022-1","15931-731325387-731335386-VCS-VCU-842-VER-MG-3-2707-01012023-31032023-1","15931-731335387-731338554-VCS-VCU-842-VER-MG-3-2707-01012023-31032023-1","17860-861905255-861935959-VCS-VCU-997-VER-MG-3-2772-01012022-31122022-1","17861-861939372-861954681-VCS-VCU-997-VER-MG-3-2772-01012024-30062024-1","17862-861956384-861973964-VCS-VCU-997-VER-MG-3-2772-06062021-31122021-1","17863-861975919-862006623-VCS-VCU-997-VER-MG-3-2772-01012023-31122023-1","18726-910009237-910039989-VCS-VCU-997-VER-MG-3-2773-01012021-31122021-1","18722-909940897-909971649-VCS-VCU-997-VER-MG-3-2773-01012023-31122023-1","18724-909975067-910005819-VCS-VCU-997-VER-MG-3-2773-01012022-31122022-1","18719-909920442-909935775-VCS-VCU-997-VER-MG-3-2773-01012024-30062024-1","18715-909880237-909911239-VCS-VCU-997-VER-MG-3-2774-01012022-31122022-1","18717-909914685-909919865-VCS-VCU-997-VER-MG-3-2774-01112021-31122021-1","18711-909828613-909844070-VCS-VCU-997-VER-MG-3-2774-01012024-30062024-1","18713-909845789-909865303-VCS-VCU-997-VER-MG-3-2774-01012023-31122023-1","18713-909865304-909876791-VCS-VCU-997-VER-MG-3-2774-01012023-31122023-1","18709-909806107-909826361-VCS-VCU-997-VER-MG-3-2775-01052021-31122021-1","18704-909724000-909728851-VCS-VCU-997-VER-MG-3-2775-01012024-30062024-1","18704-909728852-909730871-VCS-VCU-997-VER-MG-3-2775-01012024-30062024-1","18704-909735724-909739046-VCS-VCU-997-VER-MG-3-2775-01012024-30062024-1","18704-909730872-909732400-VCS-VCU-997-VER-MG-3-2775-01012024-30062024-1","18704-909732401-909735723-VCS-VCU-997-VER-MG-3-2775-01012024-30062024-1","18706-909742400-909755123-VCS-VCU-997-VER-MG-3-2775-01012023-31122023-1","18706-909755124-909772576-VCS-VCU-997-VER-MG-3-2775-01012023-31122023-1","18707-909772577-909776882-VCS-VCU-997-VER-MG-3-2775-01012022-31122022-1","18707-909794729-909802753-VCS-VCU-997-VER-MG-3-2775-01012022-31122022-1","18707-909782577-909794728-VCS-VCU-997-VER-MG-3-2775-01012022-31122022-1","18707-909776883-909777882-VCS-VCU-997-VER-MG-3-2775-01012022-31122022-1","18707-909777883-909782576-VCS-VCU-997-VER-MG-3-2775-01012022-31122022-1","18702-909698965-909722327-VCS-VCU-997-VER-MG-3-2776-01042022-31122022-1","18698-909648180-909679188-VCS-VCU-997-VER-MG-3-2776-01012023-31122023-1","18699-909679189-909694650-VCS-VCU-997-VER-MG-3-2776-01012024-30062024-1","18696-909637030-909644733-VCS-VCU-997-VER-MG-3-2777-04102021-31122021-1","18690-909550201-909565955-VCS-VCU-997-VER-MG-3-2777-01012024-30062024-1","18692-909569467-909594466-VCS-VCU-997-VER-MG-3-2777-01012022-31122022-1","18692-909594467-909601064-VCS-VCU-997-VER-MG-3-2777-01012022-31122022-1","18693-909601065-909632390-VCS-VCU-997-VER-MG-3-2777-01012023-31122023-1","18693-909632391-909632662-VCS-VCU-997-VER-MG-3-2777-01012023-31122023-1","18684-909482105-909488634-VCS-VCU-997-VER-MG-3-2778-01012024-30062024-1","18684-909488635-909496873-VCS-VCU-997-VER-MG-3-2778-01012024-30062024-1","18686-909500166-909529784-VCS-VCU-997-VER-MG-3-2778-01012023-31122023-1","18688-909531652-909548449-VCS-VCU-997-VER-MG-3-2778-08062022-31122022-1","18678-909414758-909433041-VCS-VCU-997-VER-MG-3-2779-01012023-31122023-1","18678-909433042-909434292-VCS-VCU-997-VER-MG-3-2779-01012023-31122023-1","18678-909434293-909445222-VCS-VCU-997-VER-MG-3-2779-01012023-31122023-1","18680-909448608-909473607-VCS-VCU-997-VER-MG-3-2779-01012022-31122022-1","18680-909473608-909479072-VCS-VCU-997-VER-MG-3-2779-01012022-31122022-1","18682-909479213-909480463-VCS-VCU-997-VER-MG-3-2779-17122021-31122021-1","18676-909396183-909411372-VCS-VCU-997-VER-MG-3-2779-01012024-30062024-1","18672-909371443-909386261-VCS-VCU-997-VER-MG-3-2780-01012024-30062024-1","18673-909386262-909391729-VCS-VCU-997-VER-MG-3-2780-02102022-31122022-1","18673-909391730-909393670-VCS-VCU-997-VER-MG-3-2780-02102022-31122022-1","17997-869383458-869413177-VCS-VCU-997-VER-MG-3-2780-01012023-31122023-1","18668-908824593-909110155-VCS-VCU-997-VER-MG-3-2794-01012023-31122023-1","18668-909110156-909131531-VCS-VCU-997-VER-MG-3-2794-01012023-31122023-1","18670-909155359-909369795-VCS-VCU-997-VER-MG-3-2794-21042022-31122022-1","18665-908677430-908677430-VCS-VCU-997-VER-MG-3-2794-01012024-30042024-1","18665-908687430-908687430-VCS-VCU-997-VER-MG-3-2794-01012024-30042024-1","18665-908687431-908779180-VCS-VCU-997-VER-MG-3-2794-01012024-30042024-1","18665-908677431-908687429-VCS-VCU-997-VER-MG-3-2794-01012024-30042024-1","18665-908779181-908779181-VCS-VCU-997-VER-MG-3-2794-01012024-30042024-1","18764-910423850-910443138-VCS-VCU-5660-VER-MG-3-2825-01012022-31122022-1","18764-910443139-910444006-VCS-VCU-5660-VER-MG-3-2825-01012022-31122022-1","18764-910444007-910454560-VCS-VCU-5660-VER-MG-3-2825-01012022-31122022-1","18766-910457974-910488684-VCS-VCU-5660-VER-MG-3-2825-01012021-31122021-1","18760-910371000-910386312-VCS-VCU-5660-VER-MG-3-2825-01012024-30062024-1","18761-910386313-910417023-VCS-VCU-5660-VER-MG-3-2825-01012023-31122023-1","18756-910303836-910334843-VCS-VCU-997-VER-MG-3-2826-01012022-31122022-1","18757-910334844-910359843-VCS-VCU-997-VER-MG-3-2826-01012021-31122021-1","18757-910359844-910365851-VCS-VCU-997-VER-MG-3-2826-01012021-31122021-1","18752-910250474-910265935-VCS-VCU-997-VER-MG-3-2826-01012024-30062024-1","18754-910269382-910300389-VCS-VCU-997-VER-MG-3-2826-01012023-31122023-1","18750-910215897-910220896-VCS-VCU-997-VER-MG-3-2827-01012021-31122021-1","18750-910220897-910248755-VCS-VCU-997-VER-MG-3-2827-01012021-31122021-1","18744-910122843-910139225-VCS-VCU-997-VER-MG-3-2827-01012024-30062024-1","18746-910142877-910175735-VCS-VCU-997-VER-MG-3-2827-01012023-31122023-1","18748-910179387-910184511-VCS-VCU-997-VER-MG-3-2827-01012022-31122022-1","18748-910184512-910212245-VCS-VCU-997-VER-MG-3-2827-01012022-31122022-1","19179-930598597-930648596-VCS-VCU-6411-VER-LA-3-2924-01072024-31122024-1","19179-930648597-930654150-VCS-VCU-6411-VER-LA-3-2924-01072024-31122024-1","19179-930654151-930698596-VCS-VCU-6411-VER-LA-3-2924-01072024-31122024-1","19179-930698597-930793042-VCS-VCU-6411-VER-LA-3-2924-01072024-31122024-1","19178-930435501-930570281-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19178-930579947-930598596-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19178-930570282-930579946-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19134-926148584-926323261-VCS-VCU-1289-VER-LA-3-2924-01102023-31122023-1","19135-926323262-926388558-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19136-926388559-926426583-VCS-VCU-1289-VER-LA-3-2924-10032023-30092023-1","19133-926132584-926148583-VCS-VCU-6411-VER-LA-3-2924-01072024-31122024-1","19125-925878487-926028486-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19112-925123740-925135739-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19112-925135740-925173739-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19002-918362533-918487532-VCS-VCU-1289-VER-LA-3-2924-10032023-30092023-1","19003-918487533-918612532-VCS-VCU-1289-VER-LA-3-2924-01012024-30062024-1","19415-942234905-942294904-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19390-941471173-941621172-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19390-941621173-941821172-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19315-938160853-938356290-VCS-VCU-1289-VER-KH-3-2925-01042023-31122023-1","19316-938356291-938706290-VCS-VCU-1289-VER-KH-3-2925-01042023-31122023-1","19311-937626116-937726115-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19311-937726116-938076115-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19312-938076116-938126115-VCS-VCU-1289-VER-KH-3-2925-01012024-30062024-1","19180-930793043-930943042-VCS-VCU-1289-VER-KH-3-2925-01042023-31122023-1","19143-926589571-926635532-VCS-VCU-1289-VER-KH-3-2925-01012025-31012025-1","19144-926635533-926645532-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19144-926645533-926649570-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19144-926649571-926674570-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19144-926674571-926675058-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19144-926675059-926725058-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19144-926725059-926814832-VCS-VCU-1289-VER-KH-3-2925-01072024-31122024-1","19145-926814833-927064832-VCS-VCU-1289-VER-KH-3-2925-01042023-31122023-1","19145-927064833-927122966-VCS-VCU-1289-VER-KH-3-2925-01042023-31122023-1","16142-742548032-742608031-VCS-VCU-1289-VER-KH-3-2925-01012023-31032023-1","16142-742608032-742758031-VCS-VCU-1289-VER-KH-3-2925-01012023-31032023-1","16142-742758032-742799897-VCS-VCU-1289-VER-KH-3-2925-01012023-31032023-1","16143-742799898-742859897-VCS-VCU-1289-VER-KH-3-2925-02052022-31122022-1","16143-742859898-742869897-VCS-VCU-1289-VER-KH-3-2925-02052022-31122022-1","16143-742889898-743156508-VCS-VCU-1289-VER-KH-3-2925-02052022-31122022-1","16143-742869898-742873286-VCS-VCU-1289-VER-KH-3-2925-02052022-31122022-1","16143-742873287-742889897-VCS-VCU-1289-VER-KH-3-2925-02052022-31122022-1","19189-931232399-931242398-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","19189-931247399-931335785-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","19189-931242399-931247398-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","19190-931335786-931372398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","19089-924221797-924283796-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","19089-924323797-924373796-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","19089-924283797-924323796-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","19089-924373797-924463796-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903862399-903863398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903867399-903869277-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903869278-903894277-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903864399-903865398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903894278-903919277-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903919278-903944277-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903944278-903962398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903865399-903867398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18592-903863399-903864398-VCS-VCU-1289-VER-KH-3-3052-01012024-31122024-1","18054-870476379-870509840-VCS-VCU-1289-VER-KH-3-3052-02052022-31122022-1","18055-870509841-870516478-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","17796-859849891-859849990-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","17796-859849991-859911890-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","17796-859911891-859949890-VCS-VCU-1289-VER-KH-3-3052-01012023-31122023-1","17841-860884455-860910825-VCS-VCU-997-VER-MG-3-3096-01022023-31122023-1","17841-860910826-860937088-VCS-VCU-997-VER-MG-3-3096-01022023-31122023-1","17842-860939750-860963702-VCS-VCU-997-VER-MG-3-3096-01012024-31052024-1","16784-792416381-792419230-VCS-VCU-997-VER-MG-3-3096-01012023-31012023-1","16785-792421540-792442318-VCS-VCU-997-VER-MG-3-3096-20052022-31122022-1","19181-930943043-930948596-VCS-VCU-1289-VER-LA-3-3204-01072024-31122024-1","19181-930948597-930967805-VCS-VCU-1289-VER-LA-3-3204-01072024-31122024-1","19132-926082584-926132583-VCS-VCU-1289-VER-LA-3-3204-01072024-31122024-1","18262-885175464-885180635-VCS-VCU-1289-VER-LA-3-3204-01012024-30062024-1","18262-885180636-885186740-VCS-VCU-1289-VER-LA-3-3204-01012024-30062024-1","18262-885186741-885241391-VCS-VCU-1289-VER-LA-3-3204-01012024-30062024-1","18263-885241392-885251596-VCS-VCU-1289-VER-LA-3-3204-01072024-31122024-1","17087-810426547-810450413-VCS-VCU-1289-VER-LA-3-3204-25072023-31122023-1","18470-897628319-897678318-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18470-897728319-897738318-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18470-897678319-897690818-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18470-897763319-898444326-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18470-897738319-897763318-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18470-897690819-897728318-VCS-VCU-1491-VER-RW-3-3699-01012023-31122023-1","18471-898555602-899171095-VCS-VCU-1491-VER-RW-3-3699-01012024-31122024-1","18471-899171096-899421608-VCS-VCU-1491-VER-RW-3-3699-01012024-31122024-1","17511-834329606-834333588-VCS-VCU-1491-VER-RW-3-3699-04112022-31122022-1","17511-834333589-834381940-VCS-VCU-1491-VER-RW-3-3699-04112022-31122022-1","17079-809837042-809837141-VCS-VCU-1289-VER-SL-3-3837-22022023-30042023-1","17079-809837142-809839119-VCS-VCU-1289-VER-SL-3-3837-22022023-30042023-1","19012-918776077-918812971-VCS-VCU-1289-VER-GM-3-4000-01012024-31102024-1","18814-911450937-911535050-VCS-VCU-1289-VER-GM-3-4000-01012024-31102024-1","18813-911395294-911411179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911411180-911411392-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911421180-911423179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911446180-911450936-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911423180-911446179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911413180-911420179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911420180-911421179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911411393-911412586-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911412587-911412692-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","18813-911412693-911413179-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","17637-847062570-847082569-VCS-VCU-1289-VER-GM-3-4000-23022023-31122023-1","19309-936374108-936426713-VCS-VCU-1491-VER-RW-3-4150-01102024-31122024-1","19310-937211180-937221179-VCS-VCU-1491-VER-RW-3-4150-01012025-30092025-1","19310-937261834-937309227-VCS-VCU-1491-VER-RW-3-4150-01012025-30092025-1","19310-937221180-937261833-VCS-VCU-1491-VER-RW-3-4150-01012025-30092025-1","19310-937309228-937372867-VCS-VCU-1491-VER-RW-3-4150-01012025-30092025-1","19310-937372868-937450573-VCS-VCU-1491-VER-RW-3-4150-01012025-30092025-1","18821-912497581-912624281-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18816-911548051-911548245-VCS-VCU-1491-VER-RW-3-4150-11102021-31122021-1","18817-911548247-911785393-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","18818-911785394-911787845-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","18818-911787846-911788040-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","18818-911788041-911890407-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","18819-911890408-911900407-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18819-911925408-911928407-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18819-911900408-911912907-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18819-911912908-911913054-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18819-911913055-911925407-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18819-911928408-912392620-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18820-912392621-912497580-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","18640-907674990-907674990-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18640-907791220-907809219-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18640-907809220-907810219-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18640-907819220-907831219-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18640-907810220-907819219-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18640-907831220-907840681-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","18642-907950125-907979870-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18642-907979871-908096969-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18642-908096970-908179870-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18642-908179871-908180407-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18642-908180408-908213194-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18642-908213195-908223843-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18227-882195612-882200870-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","18228-882413900-882414549-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18228-882428616-882694191-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18228-882420732-882428615-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","18228-882414550-882420731-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","17914-864860764-864886024-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","17914-864886025-865111422-VCS-VCU-1491-VER-RW-3-4150-01032024-30092024-1","17349-825792929-825798195-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17349-825801929-825804250-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17349-825798196-825801928-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17349-825804251-825804873-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17349-825804874-825849873-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17349-825849874-825874804-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17350-825902489-825905788-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17350-825918973-825923970-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17350-825905789-825918542-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17310-823503762-823591051-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823591052-823641051-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823877928-824087927-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-824317670-824367669-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823835609-823877927-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823649052-823835608-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823641052-823641289-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-824367670-824447432-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823641290-823641527-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17310-823641528-823649051-VCS-VCU-1491-VER-RW-3-4150-01032023-31122023-1","17311-824645005-824655004-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17311-824662121-824718370-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17311-824763418-824836162-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","17311-824655005-824662120-VCS-VCU-1491-VER-RW-3-4150-01012024-29022024-1","16400-760549414-760552098-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760560613-760578640-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760802445-760877444-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760578641-760578642-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760552099-760558626-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760915293-760927687-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16400-760578643-760582099-VCS-VCU-1491-VER-RW-3-4150-01012023-28022023-1","16399-759567371-759619342-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-759619343-759639342-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760134155-760144154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760548057-760548562-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760146155-760191154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760144155-760146154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760191155-760196154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760206155-760207154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760196155-760197154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760199155-760206154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760197155-760198454-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760548563-760549204-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760198455-760199154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760286155-760449154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760214155-760286154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","16399-760207155-760214154-VCS-VCU-1491-VER-RW-3-4150-01012022-31122022-1","19358-940305134-940311284-VCS-VCU-1289-VER-RW-3-4151-01062022-31122022-1","19359-940311748-940355107-VCS-VCU-1289-VER-RW-3-4151-01012023-31122023-1","19360-940358372-940360199-VCS-VCU-1289-VER-RW-3-4151-01012024-31052024-1","19360-940360200-940407786-VCS-VCU-1289-VER-RW-3-4151-01012024-31052024-1","19336-940178864-940179795-VCS-VCU-1289-VER-NG-3-4151-01062022-31122022-0","19337-940179796-940188731-VCS-VCU-1289-VER-NG-3-4151-01012023-31122023-0 ","19338-940188732-940211002-VCS-VCU-1289-VER-NG-3-4151-01012024-31052024-0","19076-923187464-923187546-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","19076-923435547-923735546-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","19076-923187547-923235546-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","19076-923735547-923994730-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18563-902823536-902913389-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18563-902913390-902923535-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18563-902923536-903323535-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18362-888345178-888497094-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18362-888591187-888805993-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","18362-888497095-888591186-VCS-VCU-1289-VER-UZ-10-4531-01012024-15092024-1","GS1-1-NG-GS11729-16-2023-29618-1-12339","GS1-1-NG-GS11729-16-2024-29619-1-25844","GS1-1-NG-GS11210-16-2025-30700-1-25282","GS1-1-NG-GS11210-16-2024-30699-1-6687","GS1-1-NG-GS7312-16-2022-26391-357272-1312595","GS1-1-NG-GS11671-16-2021-26385-15961-20645","GS1-1-NG-GS11671-16-2022-26386-336706-396603","GS1-1-NG-GS11671-16-2023-30328-1-312102","GS1-1-NG-GS11671-16-2023-30328-312103-778120","GS1-1-NG-GS11671-16-2024-30329-1-92418","GS1-1-NG-GS11671-16-2024-30329-92419-230414","GS1-1-NG-GS12282-16-2024-30332-2389-119441","GS1-1-NG-GS11741-16-2023-30314-1-58796","GS1-1-NG-GS11741-16-2024-30315-1-11104","GS1-1-NG-GS12295-16-2024-30330-1923-96138","GS1-1-NG-GS12295-16-2025-30331-301-15021"],"vin":[2022,2023,2023,2023,2023,2023,2023,2023,2023,2024,2024,2022,2023,2023,2023,2022,2024,2023,2023,2022,2022,2024,2023,2025,2024,2025,2024,2025,2024,2025,2024,2025,2024,2025,2024,2024,2023,2022,2021,2024,2023,2024,2023,2024,2023,2024,2023,2024,2023,2024,2023,2024,2023,2023,2022,2023,2022,2023,2022,2023,2024,2023,2022,2024,2023,2022,2024,2023,2022,2024,2023,2022,2023,2022,2023,2022,2024,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2022,2024,2023,2024,2023,2022,2021,2022,2021,2022,2021,2021,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2023,2022,2022,2022,2022,2021,2022,2021,2022,2021,2022,2023,2022,2023,2022,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2022,2021,2021,2021,2021,2021,2021,2021,2021,2022,2021,2022,2022,2021,2022,2022,2021,2022,2021,2021,2021,2021,2021,2021,2021,2023,2024,2023,2024,2022,2022,2021,2023,2023,2022,2022,2022,2022,2022,2022,2022,2022,2024,2023,2023,2023,2022,2022,2021,2021,2021,2021,2024,2023,2021,2021,2022,2023,2023,2024,2023,2023,2022,2021,2023,2024,2023,2021,2022,2024,2023,2023,2022,2022,2022,2022,2022,2022,2022,2022,2021,2021,2021,2021,2021,2022,2023,2024,2022,2023,2023,2024,2023,2023,2022,2021,2023,2024,2023,2023,2024,2023,2021,2022,2024,2023,2023,2021,2022,2023,2024,2023,2023,2023,2022,2023,2023,2024,2022,2023,2023,2022,2024,2021,2023,2021,2023,2022,2024,2022,2021,2024,2023,2023,2021,2024,2024,2024,2024,2024,2023,2023,2022,2022,2022,2022,2022,2022,2023,2024,2021,2024,2022,2022,2023,2023,2024,2024,2023,2022,2023,2023,2023,2022,2022,2021,2024,2024,2022,2022,2023,2023,2023,2022,2024,2024,2024,2024,2024,2022,2022,2022,2021,2024,2023,2022,2021,2021,2024,2023,2021,2021,2024,2023,2022,2022,2024,2024,2024,2024,2024,2024,2024,2023,2024,2023,2024,2024,2024,2024,2023,2024,2024,2024,2024,2023,2023,2024,2024,2024,2023,2025,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2022,2022,2022,2022,2022,2023,2023,2023,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2022,2023,2023,2023,2023,2023,2023,2024,2023,2022,2024,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2024,2024,2022,2022,2023,2023,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2025,2025,2025,2025,2025,2024,2021,2022,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2023,2023,2023,2023,2023,2023,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2022,2023,2024,2024,2022,2023,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2023,2024,2025,2024,2022,2021,2022,2023,2023,2024,2024,2024,2023,2024,2024,2025],"cty":[10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,8,8,8,8,8,8,8,8,8,8,8,8,8,6,6,6,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,7,7,7,11,11,0,0,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,11,11,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,8,8,8,8,8,8,8,8,8,8,8,8,8,6,7,7,7,7,8,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7,7,7,10,10,10,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,4,4,4,4,3,3,3,3,3,3,3,3,8,8,8,8,8,8,8,8,8,8,9,9,2,2,2,2,2,2,2,2,2,2,2,2,2,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,12,12,12,12,12,12,12,12,12,12,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],"ftd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ay":[2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2023,2023,2021,2021,2021,2021,2021,2021,2025,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2021,2021,2021,2021,2021,2021,2021,2021,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2021,2021,2021,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2026,2026,2026,2026,2026,2026,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2025,2025,2025,2025,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026],"idt":["2023-12-07","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2023-12-07","2025-02-13","2025-02-13","2025-02-13","2023-12-07","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2025-02-13","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-06-29","2026-05-21","2025-09-25","2025-09-25","2025-09-25","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-09-17","2025-06-24","2025-06-24","2025-06-03","2025-06-03","2025-06-03","2025-06-03","2025-06-03","2025-06-03","2025-05-29","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2025-02-28","2024-12-30","2024-12-30","2024-12-30","2024-10-28","2024-10-28","2024-10-28","2024-10-28","2024-10-17","2024-10-17","2024-10-17","2024-10-17","2024-10-17","2024-10-17","2024-10-17","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-07-02","2024-05-28","2024-04-26","2024-04-17","2024-04-17","2024-04-17","2024-04-17","2024-04-17","2024-04-17","2024-04-17","2024-04-16","2024-04-16","2024-03-15","2024-03-15","2023-12-06","2023-12-06","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-10-16","2023-08-08","2023-08-08","2023-08-08","2023-07-03","2023-07-03","2023-06-13","2023-06-13","2023-06-13","2023-06-13","2023-06-13","2023-06-13","2023-06-13","2023-06-13","2023-04-28","2023-04-25","2023-04-25","2023-04-25","2023-04-25","2022-12-09","2026-05-14","2026-02-04","2026-02-04","2026-01-30","2026-01-30","2025-12-15","2025-11-24","2025-11-17","2025-11-17","2025-11-17","2025-11-17","2025-09-29","2025-09-29","2025-09-29","2025-08-13","2025-08-13","2025-08-13","2025-10-29","2025-10-29","2024-05-31","2024-05-31","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2025-10-29","2025-10-29","2024-05-31","2024-05-31","2024-05-31","2024-05-31","2024-05-31","2025-10-29","2025-10-29","2024-06-03","2024-04-12","2024-04-12","2025-10-29","2025-10-29","2024-05-31","2024-05-31","2024-05-31","2025-10-29","2025-10-29","2024-06-25","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2024-02-21","2026-02-23","2026-02-23","2026-02-23","2026-03-16","2026-03-16","2026-03-16","2025-10-29","2025-10-29","2024-05-29","2024-02-21","2024-02-21","2025-10-29","2025-10-29","2024-06-25","2025-10-29","2025-10-29","2024-06-27","2024-03-11","2024-03-11","2025-10-29","2025-10-29","2024-05-29","2024-03-11","2024-03-11","2025-03-11","2025-03-11","2024-06-27","2024-06-27","2024-06-27","2024-03-11","2026-02-27","2026-02-27","2026-02-27","2023-11-28","2023-11-28","2023-11-28","2025-03-10","2025-03-10","2025-03-10","2025-03-10","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-04-17","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2025-10-29","2026-02-24","2026-02-24","2026-02-24","2026-02-24","2026-02-24","2026-02-24","2026-02-24","2026-02-11","2026-02-11","2026-02-11","2026-02-11","2026-02-06","2026-02-03","2026-02-03","2025-12-23","2025-12-23","2026-04-15","2026-04-07","2026-04-07","2026-03-20","2026-03-20","2026-03-19","2026-03-19","2026-03-19","2026-02-24","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2026-02-13","2024-01-04","2024-01-04","2024-01-04","2024-01-04","2024-01-04","2024-01-04","2024-01-04","2024-01-04","2026-02-25","2026-02-25","2026-02-25","2026-02-25","2026-01-26","2026-01-26","2026-01-26","2026-01-26","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-10-09","2025-04-29","2025-04-29","2025-02-21","2025-02-21","2025-02-21","2025-02-28","2025-02-28","2025-02-28","2024-06-06","2024-06-06","2026-02-24","2026-02-24","2026-02-11","2025-07-08","2025-07-08","2025-07-08","2025-07-08","2024-08-23","2025-09-16","2025-09-16","2025-09-16","2025-09-16","2025-09-16","2025-09-16","2025-09-16","2025-09-16","2024-12-04","2024-12-04","2024-08-16","2024-08-16","2025-12-23","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-01-06","2026-03-19","2026-03-19","2026-03-19","2026-03-19","2026-03-19","2026-03-19","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-11-04","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-10-22","2025-06-25","2025-06-25","2025-06-25","2025-06-25","2025-06-25","2025-03-25","2025-03-25","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-30","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-10-22","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2024-02-29","2026-03-31","2026-03-31","2026-03-31","2026-03-31","2026-03-31","2026-03-31","2026-03-31","2026-01-23","2026-01-23","2026-01-23","2026-01-23","2025-09-29","2025-09-29","2025-09-29","2025-08-11","2025-08-11","2025-08-11","2025-10-29","2025-10-29","2026-08-06","2026-08-06","2024-03-26","2024-03-25","2024-03-25","2024-03-25","2026-04-17","2026-04-17","2026-04-17","2026-04-17","2026-04-15","2026-04-15","2026-04-17","2026-04-17"],"iy":[2023,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2023,2025,2025,2025,2023,2025,2025,2025,2025,2025,2025,2025,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2022,2026,2026,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2025,2025,2024,2024,2024,2024,2024,2025,2025,2024,2024,2024,2025,2025,2024,2024,2024,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2026,2026,2026,2026,2026,2026,2025,2025,2024,2024,2024,2025,2025,2024,2025,2025,2024,2024,2024,2025,2025,2024,2024,2024,2025,2025,2024,2024,2024,2024,2026,2026,2026,2023,2023,2023,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2025,2025,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2024,2024,2024,2024,2024,2024,2024,2024,2026,2026,2026,2026,2026,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2026,2026,2026,2025,2025,2025,2025,2024,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2026,2026,2026,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2025,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2024,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2026,2025,2025,2025,2025,2025,2025,2025,2025,2026,2026,2024,2024,2024,2024,2026,2026,2026,2026,2026,2026,2026,2026],"ndc":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"oimp":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"ca":[8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,12,12,12,9,9,9,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,11,11,11,11,11,11,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,10,10,10,10,10,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,4,4,4,4,4,4,4,4,4,4,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12],"carp":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"url":[8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,6,6,2,2,2,2,2,2,4,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,11,11,11,10,10,9,9,11,11,11,11,11,11,11,4,4,4,4,4,4,4,4,4,4,4,4,4,2,2,2,2,2,2,2,2,9,9,10,10,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,2,2,2,4,4,4,4,4,4,4,4,4,4,3,11,11,11,11,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,18,18,18,18,18,18,18,18,18,18,19,19,19,19,19,19,19,20,-1,-1,-1,-1,21,21,21,21,21,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,12,12,12,52,51,51,23,23,23,23,23,24,24,24,25,25,25,25,25,26,26,26,26,26,26,27,27,27,27,27,0,0,0,0,0,0,28,28,28,28,29,29,29,29,30,30,30,30,30,31,31,31,31,31,31,31,31,31,31,31,31,31,32,32,32,33,33,33,33,33,33,34,34,34,34,35,35,35,35,35,35,-1,36,36,36,36,37,37,37,37,37,37,37,37,38,38,38,38,38,38,39,39,39,39,39,40,40,40,40,40,40,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,46,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,1,1,1,1,1,42,42,42,42,42,42,42,42,43,43,43,43,43,43,43,43,43,43,50,50,49,49,49,49,49,49,49,49,49,49,49,49,49,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,45,45,45,45,17,17,17,48,48,48,48,48,48,48,48,48,48,16,16,15,15,13,14,14,14,14,14,14,14,14,14,14,14]},"rowmeta":{"3":{"short":"Indicative multi-year emissions trajectory or budget","src":"Table 4 row 1","full":"If applicable, an indicative multi-year emissions trajectory, trajectories or budget for its NDC implementation period","explain":"Only relevant if the country has a single-year NDC target and chooses to adopt an indicative multi-year emissions trajectory, trajectories or budget under paragraph 7 of the Annex to decision Decision 5/CMA.3."},"4":{"short":"Multi-year trajectory or budget consistent with the NDC","src":"Table 4 row 2","full":"If applicable, multi-year emissions trajectory, trajectories or budget for its NDC implementation period that is consistent with the NDC","explain":"Only relevant if the country has a multi-year NDC target."},"5":{"short":"Annual emissions and removals covered by the NDC","src":"Table 4 row 3","full":"Annual anthropogenic emissions by sources and removals by sinks covered by its NDC or, where applicable, from the emission or sink categories as identified by the host Party pursuant to paragraph 10 of annex to decision 2/CMA.3","explain":"To be filled out based on the country's national GHG inventory"},"6":{"short":"Annual emissions and removals, paragraph 10 portion","src":"Table 4 row 4","full":"Annual anthropogenic emissions by sources and removals by sinks covered by its NDC or, where applicable, from the portion of its NDC in accordance with paragraph 10, annex to decision 2/CMA.3","explain":"To be filled out based on the country's national GHG inventory"},"7":{"short":"Annual quantity of ITMOs first transferred","src":"Table 4 row 5","full":"Annual quantity of ITMOs first transferred","explain":"The total amount of first transfers in each year. It includes mitigation outcomes authorised for NDC use, or for NDC use and (O)IMP. Where authorised only for NDC use, it reflects the year of first international transfer. Where authorised for NDC use and (O)IMP, it reflects the earlier of first international transfer or the first transfer definition, as defined in the authorisation."},"8":{"short":"Outcomes authorised for (O)IMP only","src":"Table 4 row 6","full":"Annual quantity of mitigation outcomes authorized for use for other international mitigation purposes and entities authorized to use such mitigation outcomes, as appropriate","explain":"The amount of first transferred mitigation outcomes only authorised for OIMP for each year, consistent with the host country's definition of first transfer in its authorisation. Note that where the first transfer definition is 'Authorisation', then the tool considers issuances that occur after the year of authorisation to have been first transferred in the year of authorisation."},"9":{"short":"ITMOs used towards achievement of the NDC","src":"Table 4 row 7","full":"Annual quantity of ITMOs used towards achievement of the NDC","explain":"Countries should include ITMOs authorised by other countries that have been used towards their NDC target that year."},"10":{"short":"Net annual quantity of ITMOs","src":"Table 4 row 8","full":"Net annual quantity of ITMOs resulting from paras. 23(c)-(e), annex to decision 2/CMA.3","explain":"This is the sum of row 7 (annual quantity of ITMOs first transferred) and row 8 (first transferred mitigation outcomes authorised for (O)IMP) minus row 9 (annual quantity of ITMOs used towards NDC achievement)."},"11":{"short":"Cumulative ITMOs divided by elapsed years","src":"Table 4 row 9","full":"If applicable, the cumulative amount of ITMOs, divided by the number of elapsed years in the NDC implementation period","explain":"This row only populates if the country has chosen the averaging approach as the accounting method. This tool assumes that elapsed years equate to the number of years for which a GHG inventory figure has been reported, and therefore corresponding adjustments can be applied, rather than the total number of years elapsed since the start of the NDC implementation period. Reporting countries should verify this approach against any guidance issued by their designated national authority and adjust the average figure accordingly."},"12":{"short":"Total quantitative corresponding adjustments","src":"Table 4 row 10","full":"Total quantitative corresponding adjustments used to calculate the emissions balance referred to in para. 23(k)(i), annex to decision 2/CMA.3, in accordance with the Party’s method for applying corresponding adjustments consistent with section III.B, annex to decision 2/CMA.3","explain":"Where a country has a single-year target and applies the averaging approach, this row shows the average value of the net ITMOs (row 10). Where a country has either a multi-year NDC target, or a single-year target with an indicative trajectory, this gives annual adjustments, with additions for the years in which the mitigation occurred (i.e., the vintage of the ITMO), as per Para 8(a) of the Annex to Decision 2/CMA.3."},"13":{"short":"Cumulative information on annual ITMO quantities","src":"Table 4 row 11","full":"The cumulative information in respect of the annual information in para. 23(f), annex to decision 2/CMA.3, as applicable","explain":"This row shows the cumulative total of the net annual quantity of ITMOs (row 10)."},"14":{"short":"Annual emissions balance","src":"Table 4 row 12","full":"For metrics in tonnes of CO2 eq. or non-GHG, an annual emissions balance consistent with chapter III.B","explain":"This row shows the emissions balance for years for which a GHG inventory number has been included in row 5. The emissions balance is the net balance, i.e., the sum of GHG inventory emissions (row 5) and total corresponding adjustments (row 12). Emissions balances will only show for the latest year for which there is a GHG inventory figure; remaining cells will be blank."}},"notes":[{"country":"Zimbabwe","note":"The first transfer definition in the authorisation associated with CA0011 is 'cancellation/use'. As part of the Technical Expert Review process, Zimbabwe confirmed the following: \"“Cancellation” in this instance therefore refers to the cancellation of a transactional record on the ZCR [Zimbabwe Carbon Registry] and not to the use or retirement of the credit. The Party [Zimbabwe] explained that the cancellation of a transactional record on the ZCR does not automatically trigger a corresponding adjustment, but is rather a precondition for successfully completing an inter-registry transfer. Instead, the inter-registry transfer itself automatically triggers a corresponding adjustment.\" From the perspective of programme receiving the inter-registry transfer, this would be captured at the point of re-issuance of the credit on the programme's registry. Solely for the purposes of this tool, therefore, the OIMP first transfer definition is listed as 'Issuance', to ensure these authorisated mitigation outcomes are calculated correctly.","sources":"TER Report: https://unfccc.int/sites/default/files/resource/irterr2025_ZWEa01.pdf"},{"country":"Gambia & Sierra Leone","note":"Both countries have indicated in their authorisation that 'first international transfer' is to be considered the first transfer condition. As per Verra's current approach, unless otherwise notified by the authorising government, 'first international transfer' will be considered to have occurred at the point of retirement of the VCU. For Gambia, retirements have occurred under project 4000; for Sierra Leone, no authorized VCUs have yet been retired, and no first transfer is considered to have taken place. Verra understands, based on informal discussions, issuance may be considered the first transfer condition by these governments. As such, these countries may ultimately elect to apply corresponding adjustments to these units. Absent formal notification, data does not currently populate for Gambia or Sierra Leone in this report.","sources":null}]};
+let DATA = EMBEDDED;
+const YEARS=[2021,2022,2023,2024,2025,2026];
+let D, C, RM, ROWS=[], PARTIES=[];
+
+function hydrate(){
+  D=DATA.d; C=DATA.c; RM=DATA.rowmeta; ROWS=[];
+  for(let i=0;i<DATA.n;i++) ROWS.push({
+    i, prog:D.prog[C.prog[i]], pid:C.pid[i], vol:C.vol[i], sn:C.sn[i], vin:C.vin[i],
+    cty:D.cty[C.cty[i]], ftd:D.ftd[C.ftd[i]], ay:C.ay[i], idt:C.idt[i], iy:C.iy[i],
+    ndc:C.ndc[i]===1, oimp:C.oimp[i]===1, ca:D.ca[C.ca[i]], carp:C.carp[i]===1,
+    url:C.url[i]<0?null:D.url[C.url[i]]
+  });
+  PARTIES=[...new Set(ROWS.map(r=>r.cty))].sort();
+  if(!PARTIES.includes(S.country)) S.country=PARTIES[0];
+}
+
+function validSnapshot(j){
+  return j && j.c && j.d && j.rowmeta && typeof j.n==="number" && j.n>0
+      && Array.isArray(j.c.vol) && j.c.vol.length===j.n;
+}
+
+async function boot(){
+  try{
+    const ac=new AbortController(); const t=setTimeout(()=>ac.abort(),2500);
+    const res=await fetch("/api/dataset",{signal:ac.signal,headers:{accept:"application/json"}});
+    clearTimeout(t);
+    if(res.ok){
+      const j=await res.json();
+      if(validSnapshot(j)) DATA=j;
+    }
+  }catch(e){ /* no API on this host: the embedded snapshot stands */ }
+  hydrate();
+  draw();
+}
+const RECOGNISED=new Set(["Authorisation","Issuance"]);
+const INPUT_ROWS=[3,4,5,6,9];
+
+const nf=n=>Math.round(n).toLocaleString("en-US");
+const fmt=v=>(v===""||v===null||v===undefined)?"":(typeof v==="string"?v:nf(v));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=x=>{const n=parseFloat(String(x??"").replace(/[, ]/g,""));return isFinite(n)?n:0;};
+
+const S={
+  country:"Rwanda", target:"Single-year", method:"Annual Adjustments/Trajectory",
+  invYear:2024, scope:"All", mode:"corrected",
+  inputs:{3:{},4:{},5:{},6:{},9:{}},
+  sel:{row:12,year:2024}, tab:"evidence", chartScope:"all",
+  bf:{prog:"",vin:"",ndc:"",carp:"",ftd:""}
+};
+
+/* ---------------- engine ---------------- */
+function engine(cfg,mode){
+  const pool=ROWS.filter(r=>r.cty===cfg.country&&(cfg.scope==="All"||r.carp));
+  const corrected=mode==="corrected";
+  const keep=r=>corrected?RECOGNISED.has(r.ftd):true;
+  const ftYear=(r,y)=>(r.ftd==="Authorisation"&&r.ay===y)||(r.ftd==="Issuance"&&r.iy===y);
+  const v={7:{},8:{},9:{},10:{},11:{},12:{},13:{},14:{}}, con={7:{},8:{},12:{}};
+
+  for(const y of YEARS){
+    const c7=pool.filter(r=>r.ndc&&ftYear(r,y)), c8=pool.filter(r=>!r.ndc&&ftYear(r,y));
+    con[7][y]=c7; con[8][y]=c8;
+    v[7][y]=c7.reduce((a,r)=>a+r.vol,0);
+    v[8][y]=c8.reduce((a,r)=>a+r.vol,0);
+    v[9][y]=num(cfg.inputs[9][y]);
+    v[10][y]=(v[7][y]+v[8][y])-v[9][y];
+  }
+  const averaging=cfg.target==="Single-year"&&cfg.method==="Averaging";
+  const elapsed=YEARS.filter(y=>y<=cfg.invYear).length;
+  const avg=elapsed?YEARS.reduce((a,y)=>a+v[10][y],0)/elapsed:0;
+  for(const y of YEARS){
+    if(cfg.target==="Multi-year"||cfg.method==="Annual Adjustments/Trajectory") v[11][y]="N/A";
+    else if(averaging&&y<=cfg.invYear) v[11][y]=avg;
+    else v[11][y]="";
+  }
+  for(const y of YEARS){
+    if(averaging){v[12][y]=v[11][y];con[12][y]=[];}
+    else{
+      const c=pool.filter(r=>r.vin===y&&keep(r));
+      con[12][y]=c;
+      v[12][y]=c.reduce((a,r)=>a+r.vol,0)-v[9][y];
+    }
+  }
+  let run=0;
+  for(const y of YEARS){run+=v[10][y];v[13][y]=run;}
+  // Corrected mode suppresses a balance for any year with no inventory figure entered:
+  // an emissions balance against a blank inventory is not meaningful. Workbook v1 reports it as zero minus the adjustment.
+  const invEntered=y=>{const x=cfg.inputs[5][y];return x!==undefined&&String(x).trim()!=="";};
+  for(const y of YEARS){
+    const show=(typeof v[12][y]==="number")&&y<=cfg.invYear&&(corrected?invEntered(y):true);
+    v[14][y]=show?num(cfg.inputs[5][y])-v[12][y]:"";
+  }
+  return {v,con,pool};
+}
+const sumRow=(r,row)=>YEARS.reduce((a,y)=>a+(typeof r.v[row][y]==="number"?r.v[row][y]:0),0);
+
+/* ---------------- render ---------------- */
+function visibleRows(){
+  const off=S.target==="Single-year"?4:3;
+  return [3,4,5,6,7,8,9,10,11,12,13,14].map(n=>({n,off:n===off}));
+}
+
+function renderKPIs(A){
+  const pool=A.pool, vol=pool.reduce((a,r)=>a+r.vol,0);
+  const onCarp=pool.filter(r=>r.carp).reduce((a,r)=>a+r.vol,0);
+  const ft=sumRow(A,7)+sumRow(A,8);
+  const ca=sumRow(A,12);
+  const projects=new Set(pool.map(r=>r.pid)).size;
+  const tiles=[
+    ["Authorised volume",nf(vol),`${pool.length} credit blocks, ${projects} projects`],
+    ["First transferred",nf(ft),`Rows 5 and 6 of Table 4 combined`],
+    ["Corresponding adjustments",nf(ca),`Row 10, by vintage year`],
+    ["Cumulative net ITMOs",nf(A.v[13][2026]),`Row 11 at end 2026`],
+    ["On the CARP",vol?Math.round(onCarp/vol*100)+"%":"0%",`${nf(onCarp)} of ${nf(vol)}`]
+  ];
+  document.getElementById("kpis").innerHTML=tiles.map(([k,v,d])=>
+    `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+}
+
+function renderSummary(){
+  const A=engine(S,S.mode), B=engine(S,S.mode==="corrected"?"compat":"corrected");
+  let h="<thead><tr><th class='lbl'>Field from Table 4</th>"+YEARS.map(y=>`<th>${y}</th>`).join("")+"</tr></thead><tbody>";
+  let diffs=0;
+  for(const {n,off} of visibleRows()){
+    const m=RM[n], isIn=INPUT_ROWS.includes(n);
+    h+=`<tr class="${isIn?"inputrow":"calcrow"}${off?" off":""}${[12,14].includes(n)?" emph":""}">`;
+    h+=`<td class="lbl"><div class="rowlabel"><span class="rownum">${n}</span><span>`
+      +`<span class="rowname" title="${esc(m.full)}">${esc(m.short)}</span>`
+      +`<span class="rowsrc">${esc(m.src)}</span></span></div></td>`;
+    for(const y of YEARS){
+      if(isIn){
+        h+=`<td class="cell"><input inputmode="decimal" data-row="${n}" data-year="${y}" value="${esc(S.inputs[n][y]??"")}" placeholder="0" aria-label="${esc(m.short)} ${y}"></td>`;
+      }else{
+        const a=A.v[n][y], b=B.v[n][y];
+        const dif=(typeof a==="number"&&typeof b==="number")?Math.round(a)!==Math.round(b):a!==b;
+        if(dif) diffs++;
+        const sel=S.sel&&S.sel.row===n&&S.sel.year===y;
+        const dim=(a===""||a==="N/A");
+        h+=`<td class="cell calc${dim?" dim":""}${dif?" diff":""}${sel?" sel":""}" data-row="${n}" data-year="${y}" tabindex="0" role="button">`
+          +`${a==="N/A"?"N/A":(a===""?"&middot;":nf(a))}</td>`;
+      }
+    }
+    h+="</tr>";
+  }
+  document.getElementById("summary").innerHTML=h+"</tbody>";
+
+  document.querySelectorAll("#summary input").forEach(el=>{
+    el.addEventListener("input",()=>{
+      S.inputs[+el.dataset.row][+el.dataset.year]=el.value;
+      draw({focus:el.dataset.row+"_"+el.dataset.year});
+    });
+  });
+  document.querySelectorAll("#summary .cell.calc").forEach(el=>{
+    const go=()=>{S.sel={row:+el.dataset.row,year:+el.dataset.year};S.tab="detail";draw();};
+    el.addEventListener("click",go);
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+  });
+  return {A,diffs};
+}
+
+function renderChecks(A,diffs){
+  const out=[], pool=A.pool;
+  const unrec=pool.filter(r=>!RECOGNISED.has(r.ftd));
+  if(unrec.length){
+    const uv=unrec.reduce((a,r)=>a+r.vol,0);
+    const dv=Math.abs(sumRow(engine(S,"compat"),12)-sumRow(engine(S,"corrected"),12));
+    out.push(["crit","First transfer definition unresolved for "+unrec.length+" block"+(unrec.length===1?"":"s"),
+      `<b>${nf(uv)}</b> t use the definition &ldquo;${esc(unrec[0].ftd)}&rdquo;, which the workbook logic does not resolve into a transfer year.
+       Rows 5 and 6 read zero while the adjustment total moves by <b>${nf(dv)}</b> t between the two modes.
+       Settle the definition with your designated national authority before submitting.`]);
+  }
+  const all=sumRow(engine({...S,scope:"All"},S.mode),12), carp=sumRow(engine({...S,scope:"CARP"},S.mode),12);
+  if(all!==carp){
+    out.push(["warn","Authorisation scope moves the adjustment total",
+      `All authorisations gives <b>${nf(all)}</b> t. Restricting to authorisations uploaded to the CARP gives <b>${nf(carp)}</b>,
+       a difference of <b>${nf(all-carp)}</b>. Showing <b>${S.scope==="All"?"all authorisations":"CARP only"}</b>.`]);
+  }
+  if(!YEARS.some(y=>num(S.inputs[9][y])>0)){
+    out.push(["info","Row 7 is empty and the workbook instructions do not mention it",
+      `ITMOs you received from other Parties and used towards your own NDC reduce rows 8 and 10.
+       The workbook tells users to fill rows 1 to 4 only, so this is easily missed.`]);
+  }
+  if(!YEARS.some(y=>num(S.inputs[5][y])>0)){
+    out.push(["info","Enter your national inventory to see the emissions balance",
+      `Row 12 stays blank until row 3, annual emissions and removals covered by the NDC, carries figures.`]);
+  }
+  const note=DATA.notes.find(n=>String(n.country||"").split(/\s*&\s*/).map(s=>s.trim()).includes(S.country));
+  if(note) out.push(["warn","Programme note on record for "+S.country,
+    esc(note.note).slice(0,320)+(note.note.length>320?"&hellip; <b>See Assumptions and notes.</b>":"")]);
+  if(diffs===0&&!unrec.length) out.push(["ok","Corrected mode and workbook v1 agree",
+    `Every calculated figure for ${esc(S.country)} is identical under both modes.`]);
+  document.getElementById("checks").innerHTML=out.map(([s,t,b])=>
+    `<div class="chk ${s}"><div class="sev"></div><div><div class="t">${t}</div><div class="b">${b}</div></div></div>`).join("");
+}
+
+/* ---------------- charts ---------------- */
+const compact=n=>{
+  const a=Math.abs(n);
+  if(a>=1e6) return (n/1e6).toFixed(a>=1e7?0:1).replace(/\.0$/,"")+"M";
+  if(a>=1e3) return Math.round(n/1e3)+"k";
+  return String(Math.round(n));
+};
+const niceMax=v=>{
+  if(v<=0) return 1;
+  const p=Math.pow(10,Math.floor(Math.log10(v)));
+  for(const m of [1,2,4,5,8,10]) if(v<=m*p) return m*p;
+  return 10*p;
+};
+function barTop(x,y,w,h,r){
+  r=Math.max(0,Math.min(r,w/2,h));
+  return `M${x},${y+h}L${x},${y+r}Q${x},${y} ${x+r},${y}L${x+w-r},${y}Q${x+w},${y} ${x+w},${y+r}L${x+w},${y+h}Z`;
+}
+function barRight(x,y,w,h,r){
+  r=Math.max(0,Math.min(r,h/2,w));
+  return `M${x},${y}L${x+w-r},${y}Q${x+w},${y} ${x+w},${y+r}L${x+w},${y+h-r}Q${x+w},${y+h} ${x+w-r},${y+h}L${x},${y+h}Z`;
+}
+const tipAttr=t=>`data-tip="${esc(t)}"`;
+
+/** Grouped bars: adjustments keyed on vintage against first transfers keyed on transfer year. */
+function chartClocks(){
+  const scoped = S.chartScope==="party" ? ROWS.filter(r=>r.cty===S.country) : ROWS;
+  const rows = scoped.filter(r=>S.scope==="All"||r.carp);
+  const recog = r=>RECOGNISED.has(r.ftd);
+  const ftYear=(r,y)=>(r.ftd==="Authorisation"&&r.ay===y)||(r.ftd==="Issuance"&&r.iy===y);
+  const a=YEARS.map(y=>rows.filter(r=>r.vin===y&&recog(r)).reduce((s,r)=>s+r.vol,0));
+  const b=YEARS.map(y=>rows.filter(r=>ftYear(r,y)).reduce((s,r)=>s+r.vol,0));
+  const max=niceMax(Math.max(...a,...b,1));
+
+  const W=760,H=252,ML=54,MR=10,MT=12,MB=32;
+  const pw=W-ML-MR, ph=H-MT-MB, gw=pw/YEARS.length, bw=Math.min(36,(gw-14)/2);
+  let g="";
+  for(let i=0;i<=4;i++){
+    const v=max*i/4, y=MT+ph-(ph*i/4);
+    g+=`<line class="gl" x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}"/>`;
+    g+=`<text class="axv" x="${ML-8}" y="${y+3.5}" text-anchor="end">${i?compact(v):"0"}</text>`;
+  }
+  g+=`<line class="base" x1="${ML}" y1="${MT+ph}" x2="${W-MR}" y2="${MT+ph}"/>`;
+  YEARS.forEach((y,i)=>{
+    const cx=ML+gw*i+gw/2;
+    const x1=cx-bw-1, x2=cx+1;             // 2px surface gap between adjacent bars
+    const h1=ph*a[i]/max, h2=ph*b[i]/max;
+    g+=`<path class="mk" d="${barTop(x1,MT+ph-h1,bw,h1,4)}" fill="var(--s1)" ${tipAttr(y+" · Corresponding adjustments (vintage "+y+"): "+nf(a[i])+" t")}/>`;
+    g+=`<path class="mk" d="${barTop(x2,MT+ph-h2,bw,h2,4)}" fill="var(--s2)" ${tipAttr(y+" · First transfers in "+y+": "+nf(b[i])+" t")}/>`;
+    g+=`<text class="axc" x="${cx}" y="${MT+ph+18}" text-anchor="middle">${y}</text>`;
+  });
+  const tbl=`<details class="tbl"><summary>Show as a table</summary><div class="scroller"><table class="data">
+    <thead><tr><th>Year</th><th class="r">Adjustments by vintage</th><th class="r">First transfers</th><th class="r">Gap</th></tr></thead><tbody>`
+    +YEARS.map((y,i)=>`<tr><td>${y}</td><td class="r num">${nf(a[i])}</td><td class="r num">${nf(b[i])}</td><td class="r num">${nf(b[i]-a[i])}</td></tr>`).join("")
+    +`</tbody></table></div></details>`;
+
+  const early=a[0]+a[1], late=b[4]+b[5];
+  return `<figure class="figure">
+    <div class="figcap"><h3>Adjustments and transfers run on different clocks</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Corresponding adjustments, by vintage</span>
+      <span><i style="background:var(--s2)"></i>First transfers, by transfer year</span></div></div>
+    <p class="figsub">A Party debits its account in the year the mitigation happened, and reports the ITMO flow in the year
+      the unit moved. Those are different years. <b>${nf(early)}</b> tonnes of adjustment fall in 2021 and 2022, against almost no
+      transfers, while <b>${nf(late)}</b> tonnes of transfers land in 2025 and 2026 against almost no adjustment.
+      A reader of the submitted table sees two rows that look contradictory and no way to reconcile them.</p>
+    ${svgFrame(W,H,g)}${tbl}</figure>`;
+}
+
+/** Stacked horizontal bars: how much of each Party's authorised volume sits on the CARP. */
+function chartCarp(){
+  const data=PARTIES.map(c=>{
+    const p=ROWS.filter(r=>r.cty===c);
+    const tot=p.reduce((a,r)=>a+r.vol,0);
+    const on=p.filter(r=>r.carp).reduce((a,r)=>a+r.vol,0);
+    return {c,tot,on,off:tot-on};
+  }).sort((x,y)=>y.tot-x.tot);
+  const max=niceMax(data[0].tot);
+  const W=760,RH=23,ML=104,MR=86,MT=6;
+  const H=MT+data.length*RH+26, pw=W-ML-MR;
+  let g="";
+  for(let i=0;i<=4;i++){
+    const x=ML+pw*i/4;
+    g+=`<line class="gl" x1="${x}" y1="${MT}" x2="${x}" y2="${MT+data.length*RH}"/>`;
+    g+=`<text class="axv" x="${x}" y="${MT+data.length*RH+16}" text-anchor="middle">${i?compact(max*i/4):"0"}</text>`;
+  }
+  data.forEach((d,i)=>{
+    const y=MT+i*RH+4, bh=RH-9;
+    const wOn=pw*d.on/max, wOff=pw*d.off/max;
+    const sel=d.c===S.country;
+    if(wOn>0.5) g+=`<path class="mk" d="${barRight(ML,y,wOn,bh,wOff>2?0:4)}" fill="var(--s1)" ${tipAttr(d.c+" · on the CARP: "+nf(d.on)+" t")}/>`;
+    if(wOff>0.5) g+=`<path class="mk" d="${barRight(ML+wOn+(wOn>0.5?2:0),y,Math.max(0,wOff-(wOn>0.5?2:0)),bh,4)}" fill="var(--s2)" ${tipAttr(d.c+" · not on the CARP: "+nf(d.off)+" t")}/>`;
+    g+=`<text class="axc${sel?" on":""}" x="${ML-10}" y="${y+bh-2}" text-anchor="end">${esc(d.c)}</text>`;
+    g+=`<text class="vlab" x="${ML+wOn+wOff+8}" y="${y+bh-2}">${compact(d.tot)}</text>`;
+  });
+  const zero=data.filter(d=>d.on===0);
+  const tot=data.reduce((a,d)=>a+d.tot,0), onTot=data.reduce((a,d)=>a+d.on,0);
+  const tbl=`<details class="tbl"><summary>Show as a table</summary><div class="scroller"><table class="data">
+    <thead><tr><th>Party</th><th class="r">Authorised</th><th class="r">On the CARP</th><th class="r">Not on the CARP</th><th class="r">Share on CARP</th></tr></thead><tbody>`
+    +data.map(d=>`<tr><td>${esc(d.c)}</td><td class="r num">${nf(d.tot)}</td><td class="r num">${nf(d.on)}</td><td class="r num">${nf(d.off)}</td><td class="r num">${Math.round(d.on/d.tot*100)}%</td></tr>`).join("")
+    +`</tbody></table></div></details>`;
+
+  return `<figure class="figure">
+    <div class="figcap"><h3>Nearly half the authorised volume is not on the CARP</h3>
+      <div class="legend"><span><i style="background:var(--s1)"></i>On the CARP</span>
+      <span><i style="background:var(--s2)"></i>Not on the CARP</span></div></div>
+    <p class="figsub">The workbook offers a dropdown asking whether to count all authorisations or only those uploaded to the
+      Article 6 centralised accounting and reporting platform. It is the single most consequential setting in the file and it
+      carries no warning. <b>${nf(tot-onTot)}</b> of <b>${nf(tot)}</b> tonnes sit outside the platform, and
+      <b>${zero.length}</b> Parties (${zero.map(d=>esc(d.c)).join(", ")}) drop to zero if a reviewer insists on it.</p>
+    ${svgFrame(W,H,g)}${tbl}</figure>`;
+}
+
+function svgFrame(w,h,inner){
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img">${inner}</svg>`;
+}
+
+function tabEvidence(){
+  const seg=`<div class="seg" style="max-width:270px;margin-bottom:14px">
+      <button id="cs-all" aria-pressed="${S.chartScope==="all"}">All Parties</button>
+      <button id="cs-party" aria-pressed="${S.chartScope==="party"}">${esc(S.country)} only</button>
+    </div>`;
+  return `<p class="note" style="margin-bottom:14px">Both findings below are already inside the workbook. Neither is visible
+    from it, because a spreadsheet answers the question you typed and nothing else.</p>`
+    + seg + chartClocks() + chartCarp();
+}
+function bindEvidence(){
+  const a=document.getElementById("cs-all"), p=document.getElementById("cs-party");
+  if(a) a.onclick=()=>{S.chartScope="all";renderTab(engine(S,S.mode));bindEvidence();};
+  if(p) p.onclick=()=>{S.chartScope="party";renderTab(engine(S,S.mode));bindEvidence();};
+  bindTips();
+}
+
+let TIP;
+function bindTips(){
+  if(!TIP){ TIP=document.createElement("div"); TIP.className="tip"; document.body.appendChild(TIP); }
+  document.querySelectorAll("#tabbody .mk[data-tip]").forEach(el=>{
+    el.addEventListener("mouseenter",()=>{TIP.textContent=el.dataset.tip;TIP.classList.add("on");});
+    el.addEventListener("mousemove",e=>{
+      const x=Math.min(e.clientX+14,window.innerWidth-260), y=Math.max(8,e.clientY-40);
+      TIP.style.left=x+"px"; TIP.style.top=y+"px";
+    });
+    el.addEventListener("mouseleave",()=>TIP.classList.remove("on"));
+  });
+}
+
+/* ---------------- the case ---------------- */
+function renderClaims(){
+  const tot=ROWS.reduce((a,r)=>a+r.vol,0);
+  const offCarp=ROWS.filter(r=>!r.carp).reduce((a,r)=>a+r.vol,0);
+  const noCa=ROWS.filter(r=>r.ca==="NA").reduce((a,r)=>a+r.vol,0);
+  const claims=[
+    ["Every figure is traceable","Select any calculated number in the table below and the exact credit blocks behind it appear, with serial numbers and a link to each authorisation document. In the workbook that is a SUMIFS across 601 rows you rebuild by hand."],
+    ["Elections can be compared","A Party choosing between the average annual approach and an indicative trajectory gets materially different numbers from identical data. The workbook shows one answer at a time. <b>Scenarios</b> shows all of them."],
+    ["It refuses to fail quietly","Type a Party name wrong in the workbook and it returns a clean page of zeros. Here the Party is a closed list, unresolved first transfer definitions raise a visible check, and every divergence from the source file is marked in the cell."],
+    ["The picture is visible at all",`Consolidating fourteen Parties made facts that no single-country spreadsheet can show: <b>${nf(offCarp)}</b> tonnes authorised outside the CARP, <b>${nf(noCa)}</b> tonnes with no cooperative approach recorded, out of <b>${nf(tot)}</b> in total.`]
+  ];
+  document.getElementById("claims").innerHTML=claims.map(([t,d])=>
+    `<div class="claim"><div class="ct">${t}</div><div class="cd">${d}</div></div>`).join("");
+}
+
+/* ---------------- tabs ---------------- */
+const TABS=["evidence","detail","scenarios","blocks","parties","notes","export"];
+function renderTab(A){
+  TABS.forEach(k=>document.getElementById("tab-"+k).setAttribute("aria-selected",String(S.tab===k)));
+  const el=document.getElementById("tabbody");
+  if(S.tab==="evidence")      el.innerHTML=tabEvidence();
+  else if(S.tab==="detail")   el.innerHTML=tabTrace(A);
+  else if(S.tab==="scenarios")el.innerHTML=tabScenarios();
+  else if(S.tab==="blocks"){  el.innerHTML=tabBlocks(A); bindBlocks(); }
+  else if(S.tab==="parties"){ el.innerHTML=tabParties(); bindParties(); }
+  else if(S.tab==="notes")    el.innerHTML=tabNotes();
+  else                      { el.innerHTML=tabExport(A); bindExport(A); }
+}
+
+function creditTable(list,limit){
+  const shown=list.slice(0,limit||400);
+  let h=`<div class="scroller"><table class="data"><thead><tr>
+    <th>Prog</th><th>Project</th><th class="r">Volume</th><th class="r">Vintage</th><th>First transfer</th>
+    <th class="r">Auth</th><th class="r">Issued</th><th>NDC</th><th>CARP</th><th>CA</th><th>Serial</th><th>Source</th>
+  </tr></thead><tbody>`;
+  for(const r of shown){
+    h+=`<tr><td><span class="chip ${r.prog==="GS"?"gs":"vr"}">${esc(r.prog)}</span></td>
+      <td>${esc(r.pid)}</td><td class="r num">${nf(r.vol)}</td><td class="r num">${r.vin}</td>
+      <td>${esc(r.ftd)}</td><td class="r num">${r.ay}</td><td class="r num">${esc(r.idt)}</td>
+      <td>${r.ndc?"Yes":"No"}</td><td>${r.carp?"Yes":"No"}</td><td>${esc(r.ca)}</td>
+      <td class="sn">${esc(r.sn)}</td>
+      <td>${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">Authorisation</a>`:'<span style="color:var(--ink-3)">None</span>'}</td></tr>`;
+  }
+  h+=`</tbody><tfoot><tr><td colspan="2">${list.length} block${list.length===1?"":"s"}</td>
+    <td class="r num">${nf(list.reduce((a,r)=>a+r.vol,0))}</td><td colspan="9"></td></tr></tfoot></table></div>`;
+  if(list.length>shown.length) h+=`<div class="hint" style="margin-top:8px">Showing the first ${shown.length} of ${list.length}.</div>`;
+  return h;
+}
+
+function tabTrace(A){
+  if(!S.sel) return `<div class="empty">Select any calculated figure in the structured summary to trace it.</div>`;
+  const {row,year}=S.sel, m=RM[row], list=(A.con[row]&&A.con[row][year])||[];
+  let h=`<div style="margin-bottom:12px">
+    <div class="eyebrow">Row ${row} &middot; ${year} &middot; ${esc(S.country)}</div>
+    <div style="font-family:var(--serif);font-size:24px;font-weight:600;margin:3px 0 6px" class="num">${fmt(A.v[row][year])}</div>
+    <div class="note">${esc(m.explain||m.full)}</div></div>`;
+  if(!list.length){
+    const why = row===12&&S.method==="Averaging"
+      ? "Under the averaging method this row takes its value from row 9 rather than from individual credit blocks."
+      : [10,13,14,11].includes(row)
+        ? "This row is derived from other rows rather than from credit blocks directly."
+        : "No credit blocks contribute to this figure under the current settings.";
+    return h+`<div class="empty">${why}</div>`;
+  }
+  return h+creditTable(list);
+}
+
+function tabScenarios(){
+  const combos=[
+    ["Single-year","Annual Adjustments/Trajectory","Single-year NDC, annual adjustments against an indicative trajectory"],
+    ["Single-year","Averaging","Single-year NDC, average annual approach"],
+    ["Multi-year","Annual Adjustments/Trajectory","Multi-year NDC, annual adjustments"]
+  ];
+  let h=`<div class="note" style="margin-bottom:12px">The accounting election under Decision 2/CMA.3, annex, paragraph 7(a) changes the reported figures from identical data. Row 10, total corresponding adjustments, under each permitted election for ${esc(S.country)}.</div>`;
+  h+=`<div class="scroller"><table class="data"><thead><tr><th>Election</th>`
+    +YEARS.map(y=>`<th class="r">${y}</th>`).join("")+`<th class="r">Total</th></tr></thead><tbody>`;
+  for(const [t,mth,label] of combos){
+    const r=engine({...S,target:t,method:mth},S.mode);
+    const cur=(t===S.target&&mth===S.method);
+    h+=`<tr${cur?' style="background:var(--accent-soft)"':''}><td><b>${esc(label)}</b>${cur?' <span class="chip">current</span>':''}</td>`
+      +YEARS.map(y=>{const v=r.v[12][y];return `<td class="r num">${typeof v==="number"?nf(v):(v||"&middot;")}</td>`;}).join("")
+      +`<td class="r num"><b>${nf(sumRow(r,12))}</b></td></tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  h+=`<div class="note" style="margin:20px 0 12px">Authorisation scope, under the current election.</div>`;
+  h+=`<div class="scroller"><table class="data"><thead><tr><th>Scope</th>`
+    +YEARS.map(y=>`<th class="r">${y}</th>`).join("")+`<th class="r">Total</th></tr></thead><tbody>`;
+  for(const [sc,label] of [["All","All authorisations"],["CARP","Uploaded to the CARP only"]]){
+    const r=engine({...S,scope:sc},S.mode), cur=sc===S.scope;
+    h+=`<tr${cur?' style="background:var(--accent-soft)"':''}><td><b>${label}</b>${cur?' <span class="chip">current</span>':''}</td>`
+      +YEARS.map(y=>{const v=r.v[12][y];return `<td class="r num">${typeof v==="number"?nf(v):(v||"&middot;")}</td>`;}).join("")
+      +`<td class="r num"><b>${nf(sumRow(r,12))}</b></td></tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  h+=`<div class="note" style="margin:20px 0 12px">Calculation mode. Corrected mode excludes credit blocks whose first transfer definition the workbook logic cannot resolve; workbook v1 counts them in row 10 but not in rows 5 and 6.</div>`;
+  h+=`<div class="scroller"><table class="data"><thead><tr><th>Mode</th>`
+    +YEARS.map(y=>`<th class="r">${y}</th>`).join("")+`<th class="r">Total</th></tr></thead><tbody>`;
+  for(const [md,label] of [["corrected","Corrected"],["compat","Workbook v1"]]){
+    const r=engine(S,md), cur=md===S.mode;
+    h+=`<tr${cur?' style="background:var(--accent-soft)"':''}><td><b>${label}</b>${cur?' <span class="chip">current</span>':''}</td>`
+      +YEARS.map(y=>{const v=r.v[12][y];return `<td class="r num">${typeof v==="number"?nf(v):(v||"&middot;")}</td>`;}).join("")
+      +`<td class="r num"><b>${nf(sumRow(r,12))}</b></td></tr>`;
+  }
+  return h+`</tbody></table></div>`;
+}
+
+function tabBlocks(A){
+  const pool=ROWS.filter(r=>r.cty===S.country);
+  const f=S.bf;
+  const list=pool.filter(r=>(!f.prog||r.prog===f.prog)&&(!f.vin||r.vin===+f.vin)
+    &&(!f.ndc||(r.ndc?"Yes":"No")===f.ndc)&&(!f.carp||(r.carp?"Yes":"No")===f.carp)
+    &&(!f.ftd||r.ftd===f.ftd)).sort((a,b)=>b.vol-a.vol);
+  const opts=(vals,cur)=>vals.map(v=>`<option value="${esc(v)}"${String(cur)===String(v)?" selected":""}>${esc(v)}</option>`).join("");
+  const uniq=k=>[...new Set(pool.map(r=>r[k]))].sort();
+  let h=`<div class="filters">
+    <select id="bf-prog"><option value="">All programmes</option>${opts(uniq("prog"),f.prog)}</select>
+    <select id="bf-vin"><option value="">All vintages</option>${opts(uniq("vin"),f.vin)}</select>
+    <select id="bf-ftd"><option value="">Any first transfer definition</option>${opts(uniq("ftd"),f.ftd)}</select>
+    <select id="bf-ndc"><option value="">NDC and (O)IMP</option><option value="Yes"${f.ndc==="Yes"?" selected":""}>Authorised for NDC</option><option value="No"${f.ndc==="No"?" selected":""}>(O)IMP only</option></select>
+    <select id="bf-carp"><option value="">Any CARP status</option><option value="Yes"${f.carp==="Yes"?" selected":""}>On the CARP</option><option value="No"${f.carp==="No"?" selected":""}>Not on the CARP</option></select>
+  </div>`;
+  return h+creditTable(list,400);
+}
+function bindBlocks(){
+  const map={"bf-prog":"prog","bf-vin":"vin","bf-ftd":"ftd","bf-ndc":"ndc","bf-carp":"carp"};
+  for(const id in map){
+    const el=document.getElementById(id);
+    if(el) el.onchange=()=>{S.bf[map[id]]=el.value;renderTab(engine(S,S.mode));bindBlocks();};
+  }
+}
+
+function tabParties(){
+  const rows=PARTIES.map(c=>{
+    const pool=ROWS.filter(r=>r.cty===c);
+    const r=engine({...S,country:c},S.mode);
+    const vol=pool.reduce((a,x)=>a+x.vol,0);
+    const carp=pool.filter(x=>x.carp).reduce((a,x)=>a+x.vol,0);
+    return {c,n:pool.length,vol,carp,ft:sumRow(r,7)+sumRow(r,8),ca:sumRow(r,12),
+            oimp:pool.filter(x=>!x.ndc).reduce((a,x)=>a+x.vol,0)};
+  }).sort((a,b)=>b.vol-a.vol);
+  const max=Math.max(...rows.map(r=>r.vol));
+  const tot=rows.reduce((a,r)=>a+r.vol,0);
+  let h=`<div class="note" style="margin-bottom:12px">Every Party in the consolidated Gold Standard and Verra dataset. Select a row to load it.</div>`;
+  h+=`<div class="scroller"><table class="data"><thead><tr>
+    <th>Party</th><th class="r">Blocks</th><th class="r">Authorised</th><th></th>
+    <th class="r">(O)IMP only</th><th class="r">First transferred</th><th class="r">Adjustments</th><th class="r">On CARP</th>
+  </tr></thead><tbody>`;
+  for(const r of rows){
+    h+=`<tr class="clickable" data-c="${esc(r.c)}"${r.c===S.country?' style="background:var(--accent-soft)"':''}>
+      <td><b>${esc(r.c)}</b></td><td class="r num">${r.n}</td><td class="r num">${nf(r.vol)}</td>
+      <td><span class="bar"><i style="width:${Math.max(2,r.vol/max*100)}%"></i></span></td>
+      <td class="r num">${nf(r.oimp)}</td><td class="r num">${nf(r.ft)}</td><td class="r num">${nf(r.ca)}</td>
+      <td class="r num">${r.vol?Math.round(r.carp/r.vol*100):0}%</td></tr>`;
+  }
+  return h+`</tbody><tfoot><tr><td>${rows.length} Parties</td><td class="r num">${DATA.n}</td>
+    <td class="r num">${nf(tot)}</td><td colspan="5"></td></tr></tfoot></table></div>`;
+}
+function bindParties(){
+  document.querySelectorAll("#tabbody tr.clickable").forEach(tr=>
+    tr.onclick=()=>{S.country=tr.dataset.c;S.sel={row:12,year:S.invYear};draw();});
+}
+
+function tabNotes(){
+  const items=[
+    ["Programme interpretation of Table 4","Gold Standard and Verra state the workbook reflects their interpretation of the structured summary requirements, not an authoritative reading. Every row inherits that caveat.",RM[7].explain],
+    ["First transfer for (O)IMP-only outcomes","Where an authorisation defines first transfer as authorisation, issuances after the authorisation year are treated as first transferred in the authorisation year.",RM[8].explain],
+    ["Elapsed years under averaging","Elapsed years are equated with the number of years for which an inventory figure is reported, not years since the NDC period began.",RM[11].explain],
+    ["Vintage attribution","Under the trajectory method, adjustments are added in the year the mitigation occurred, meaning the vintage of the unit.",RM[12].explain],
+    ["Emissions balance coverage","Balances appear only for years with a reported inventory figure. Later years stay blank.",RM[14].explain],
+    ["Authorisation terms are not modelled","Neither the workbook nor this tool holds authorisation caps, windows, vintage restrictions or conditions. Computed volumes must be checked against the terms of each authorisation.",""],
+    ["Corrected legal citation","The workbook cites the single-year accounting election to Decision 3/CMA.3 on one sheet and Decision 5/CMA.3 on another. Neither is correct. The provision is Decision 2/CMA.3, annex, paragraph 7(a). This tool uses the correct citation.",""],
+    ["Authorised but unlabelled credits","The workbook states credits may be authorised while developers have not requested Article 6 labels on the programme registries, so units in this dataset may not appear as authorised on either registry.",""]
+  ];
+  let h=`<div class="note" style="margin-bottom:14px">Interpretive choices behind the figures. A designated national authority should confirm each before submission.</div>`;
+  h+=items.map(it=>`<div style="padding:11px 0;border-bottom:1px solid var(--line-2)">
+    <div style="font-size:12.5px;font-weight:700">${esc(it[0])}</div>
+    <div class="note" style="margin-top:3px">${esc(it[1])}</div>
+    ${it[2]?`<div class="quote">${esc(it[2])}</div>`:""}</div>`).join("");
+  if(DATA.notes.length){
+    h+=`<div style="margin-top:20px"><div class="eyebrow" style="margin-bottom:8px">Party-specific notes from the programmes</div>`;
+    h+=DATA.notes.map(n=>`<div style="padding:11px 0;border-bottom:1px solid var(--line-2)">
+      <div style="font-size:12.5px;font-weight:700">${esc(n.country)}</div>
+      <div class="note" style="margin-top:3px">${esc(n.note)}</div>
+      ${n.sources?`<div class="hint" style="margin-top:6px">${esc(n.sources).replace(/(https?:\/\/\S+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}</div>`:""}
+    </div>`).join("")+`</div>`;
+  }
+  return h;
+}
+
+function csv(rows){
+  return rows.map(r=>r.map(c=>{const s=String(c??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
+}
+function summaryCSV(A){
+  const L=[["Article 6.2 structured summary"],["Party",S.country],["NDC target type",S.target],
+    ["Accounting method",S.method],["Latest inventory year",S.invYear],
+    ["Authorisation scope",S.scope==="All"?"All authorisations":"Uploaded to the CARP only"],
+    ["Calculation mode",S.mode==="corrected"?"Corrected":"Workbook v1 compatibility"],
+    ["Source dataset","Gold Standard and Verra, Article-6.2-CA-Reporting-Tool_v1.xlsx, cutoff "+DATA.cutoff],[],
+    ["Row","Field from Table 4 of Decision 5/CMA.3",...YEARS]];
+  for(const {n,off} of visibleRows()){
+    if(off) continue;
+    L.push([n,RM[n].full,...YEARS.map(y=>INPUT_ROWS.includes(n)
+      ?(S.inputs[n][y]??"")
+      :(typeof A.v[n][y]==="number"?Math.round(A.v[n][y]):A.v[n][y]))]);
+  }
+  return csv(L);
+}
+function auditCSV(A){
+  const L=[["Row","Year","Programme","Project ID","Volume","Vintage","First transfer definition","Authorisation year",
+    "Issuance date","Authorised for NDC","On CARP","Cooperative approach","Serial number","Authorisation link"]];
+  for(const row of [7,8,12]) for(const y of YEARS) for(const r of (A.con[row]?.[y]||[]))
+    L.push([row,y,r.prog,r.pid,r.vol,r.vin,r.ftd,r.ay,r.idt,r.ndc?"Yes":"No",r.carp?"Yes":"No",r.ca,r.sn,r.url||""]);
+  return csv(L);
+}
+function tabExport(A){
+  return `<div class="note" style="margin-bottom:12px">The structured summary in the shape it is submitted, and an audit annex naming every credit block behind rows 5, 6 and 10.</div>
+    <div class="btnrow">
+      <button class="btn primary" id="x-sum">Copy structured summary</button>
+      <button class="btn" id="x-aud">Copy audit annex</button>
+      <button class="btn" id="x-view">Show audit annex</button>
+      <span id="x-msg" style="font-size:12px;color:var(--ok);font-weight:600"></span>
+    </div><pre class="out" id="x-out">${esc(summaryCSV(A))}</pre>`;
+}
+function bindExport(A){
+  const out=document.getElementById("x-out"), msg=document.getElementById("x-msg");
+  const copy=(t,l)=>{(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject())
+    .then(()=>{msg.textContent=l+" copied";setTimeout(()=>msg.textContent="",2200);})
+    .catch(()=>{msg.textContent="Select the text below and copy";});};
+  document.getElementById("x-sum").onclick=()=>{const t=summaryCSV(A);out.textContent=t;copy(t,"Structured summary");};
+  document.getElementById("x-aud").onclick=()=>{const t=auditCSV(A);out.textContent=t;copy(t,"Audit annex");};
+  document.getElementById("x-view").onclick=()=>{out.textContent=auditCSV(A);};
+}
+
+/* ---------------- controls ---------------- */
+let wired=false;
+function renderControls(){
+  const cs=document.getElementById("f-country");
+  if(!wired){
+    cs.innerHTML=PARTIES.map(c=>`<option>${esc(c)}</option>`).join("");
+    cs.onchange=()=>{S.country=cs.value;S.sel={row:12,year:S.invYear};S.bf={prog:"",vin:"",ndc:"",carp:"",ftd:""};draw();};
+    const iy=document.getElementById("f-invyear");
+    iy.innerHTML=[2021,2022,2023,2024,2025].map(y=>`<option>${y}</option>`).join("");
+    iy.onchange=()=>{S.invYear=+iy.value;draw();};
+    document.getElementById("t-single").onclick=()=>{S.target="Single-year";draw();};
+    document.getElementById("t-multi").onclick=()=>{S.target="Multi-year";S.method="Annual Adjustments/Trajectory";draw();};
+    document.getElementById("s-all").onclick=()=>{S.scope="All";draw();};
+    document.getElementById("s-carp").onclick=()=>{S.scope="CARP";draw();};
+    document.getElementById("m-corrected").onclick=()=>{S.mode="corrected";draw();};
+    document.getElementById("m-compat").onclick=()=>{S.mode="compat";draw();};
+    TABS.forEach(k=>document.getElementById("tab-"+k).onclick=()=>{S.tab=k;renderTab(engine(S,S.mode));
+      if(k==="evidence")bindEvidence(); if(k==="blocks")bindBlocks();
+      if(k==="parties")bindParties(); if(k==="export")bindExport(engine(S,S.mode));});
+    document.getElementById("stamp-date").textContent="14 August 2026";
+    document.getElementById("stamp-src").textContent="Gold Standard and Verra v"+DATA.version;
+    document.getElementById("ds-meta").innerHTML=
+      `<b>${DATA.n}</b> credit blocks<br><b>${PARTIES.length}</b> Parties, <b>${nf(ROWS.reduce((a,r)=>a+r.vol,0))}</b> t authorised<br>Snapshot ${DATA.cutoff}`;
+    wired=true;
+  }
+  cs.value=S.country;
+  const ms=document.getElementById("f-method");
+  const opts=S.target==="Single-year"?["Averaging","Annual Adjustments/Trajectory"]:["Annual Adjustments/Trajectory"];
+  if(!opts.includes(S.method)) S.method=opts[opts.length-1];
+  ms.innerHTML=opts.map(o=>`<option${o===S.method?" selected":""}>${o}</option>`).join("");
+  ms.onchange=()=>{S.method=ms.value;draw();};
+  document.getElementById("f-invyear").value=S.invYear;
+  const press=(id,v)=>document.getElementById(id).setAttribute("aria-pressed",String(v));
+  press("t-single",S.target==="Single-year"); press("t-multi",S.target==="Multi-year");
+  press("s-all",S.scope==="All"); press("s-carp",S.scope==="CARP");
+  press("m-corrected",S.mode==="corrected"); press("m-compat",S.mode==="compat");
+
+  const pool=ROWS.filter(r=>r.cty===S.country);
+  const onCarp=pool.filter(r=>r.carp).length;
+  const cas=[...new Set(pool.map(r=>r.ca))].filter(x=>x!=="NA");
+  document.getElementById("country-meta").innerHTML=
+    `<b>${pool.length}</b> credit blocks from <b>${new Set(pool.map(r=>r.pid)).size}</b> projects<br>`+
+    `<b>${pool.filter(r=>r.prog==="GS").length}</b> Gold Standard, <b>${pool.filter(r=>r.prog==="Verra").length}</b> Verra<br>`+
+    `Cooperative approaches: <b>${cas.length?cas.join(", "):"none recorded"}</b>`;
+  document.getElementById("scope-hint").textContent=
+    `${onCarp} of ${pool.length} blocks sit under an authorisation uploaded to the CARP.`;
+}
+
+function draw(opt){
+  renderControls();
+  const {A,diffs}=renderSummary();
+  renderKPIs(A);
+  renderChecks(A,diffs);
+  renderTab(A);
+  renderClaims();
+  if(S.tab==="evidence")bindEvidence();
+  if(S.tab==="blocks")bindBlocks();
+  if(S.tab==="parties")bindParties();
+  if(S.tab==="export")bindExport(A);
+  if(opt&&opt.focus){
+    const [r,y]=opt.focus.split("_");
+    const el=document.querySelector(`#summary input[data-row="${r}"][data-year="${y}"]`);
+    if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}
+  }
+}
+boot();
+</script>

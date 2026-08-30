@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "article6-ca-workbench",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+
+  // Static front end. Requests that do not match /api/* are served from ./public.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+
+  // D1. Create the database first with:  npx wrangler d1 create article6
+  // then paste the returned database_id below. Until then the Worker returns 503
+  // on /api/* and the front end falls back to its embedded snapshot, so the site
+  // still works before the database exists.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "article6",
+      "database_id": "PASTE_DATABASE_ID_HERE"
+    }
+  ],
+
+  "observability": { "enabled": true }
+}
