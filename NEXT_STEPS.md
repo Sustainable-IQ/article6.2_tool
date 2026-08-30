@@ -1,102 +1,95 @@
-# Next steps
+# Where this stands, and what is left
 
-Working folder: `~/Projects/MyScripts/article6.2_tool`. Run everything below in the VSCode terminal.
+Last updated 2026-08-30, after the first successful deploy.
 
-All git commands are yours to run, not Cowork's. Cowork cannot delete files on this machine, and git
-deletes constantly (lock files, temp objects). Every time Cowork has run git here it has left a lock
-behind that blocked the next commit. Restoring files is safe; running git is not.
+## Done
 
-## What state this folder is in
+- Repository pushed to https://github.com/Sustainable-IQ/article6.2_tool, branch `main`, 23 files.
+- Worker deployed and live at https://article6-ca-workbench.admindynamo.workers.dev
+- D1 database `article6` created, schema applied, seed loaded.
+- Data verified against the source workbook: 601 credit blocks, total volume 23,240,850. Exact match.
+- Tests pass locally: 14 of 14, seven engine and seven API.
 
-The zip downloaded on 2026-08-30 was verified byte-identical to `Article6_workbench_repo.zip`, the
-bundle from the 25 August session. All thirteen files matched exactly. It was the same build, not a
-newer one.
+Cloudflare account in use: `1b72e4972bf0dd6b7818dd04284725ab` (admindynamo@proton.me).
+D1 database id: `9fb0ecbc-f40e-4409-b3cb-693bd83565b2`. Both are pinned in `wrangler.jsonc`.
 
-That zip did not include `.gitignore`, `docs/`, `data/source/` or `reference/`. Those have been
-restored from `MyDrive/cowork_files/Article6_gs_verra/`. The tree now holds 22 files. Tests pass:
-14 of 14.
+## Rules for this machine, learned the hard way
 
-## 1. Clear the lock and initialise git
+1. Run wrangler in **Terminal.app**, not the VSCode integrated terminal. VSCode's Python extension
+   injects `source ~/Projects/dev-env/bin/activate` into the terminal, which steals confirmation
+   prompts and kills long-running commands mid-execution. It broke `wrangler d1 execute` four times.
+   To fix permanently, turn off `python.terminal.activateEnvironment` in VSCode settings.
+2. `wrangler d1 execute` needs `--yes` or it will hang on a confirmation prompt.
+3. Schema before seed, always. `0001_schema.sql` creates the tables; `0002_seed_*.sql` fills them.
+   Running the seed first fails with `no such table: credit_blocks`. Both are safe to re-run: the
+   schema opens with DROP TABLE IF EXISTS, the seed with DELETE.
+4. Your shell is zsh. Do not paste command blocks that contain `#` comments; zsh passes them to the
+   command as arguments rather than ignoring them.
 
-Cowork left `.git/index.lock` while checking what git would stage. Remove it first.
+## Step 1: confirm the site is serving live data
 
-```bash
-cd ~/Projects/MyScripts/article6.2_tool
-rm -f .git/*.lock
-git status                       # should list untracked files, no errors
-```
+Open in a browser:
 
-`.git` exists and `origin` is already set to the right repository, so `git init` and
-`git remote add` are not needed. If you run them anyway, git will say "reinitialized" and
-"remote origin already exists"; both are harmless.
+    https://article6-ca-workbench.admindynamo.workers.dev/api/parties
 
-## 2. Check what will be committed, before committing
+Fourteen Parties in JSON means the Worker is reading from D1. Then open the site root; it should now
+show live data rather than the snapshot embedded in the page. If `/api/parties` returns 503, the
+Worker lost its database binding: re-run `npm run deploy` from Terminal.app.
 
-This is the step that matters. `npm install` has already run, so `node_modules/` is on disk with
-thousands of files. The restored `.gitignore` excludes it.
+## Step 2: commit the configuration
 
-```bash
-git add -A
-git status --short | wc -l       # expect 22, not thousands
-```
+`wrangler.jsonc` gained the account id and database id after the last commit. Check and commit:
 
-If that number is in the thousands, stop: `.gitignore` is not being read. Do not push.
+    git status
 
-## 3. Commit and push
+If `wrangler.jsonc` or `NEXT_STEPS.md` appear as modified:
 
-```bash
-git commit -m "Article 6.2 corresponding adjustments workbench"
-git branch -M main
-git push -u origin main
-```
+    git add wrangler.jsonc NEXT_STEPS.md
+    git commit -m "Pin Cloudflare account and D1 database id, update status"
+    git push
 
-GitHub should then show 22 files.
+Neither id is a secret. Cloudflare's own documentation commits both.
 
-## 4. Deploy the real thing
+## Step 3: decide where this tool permanently lives
 
-Skip the small drag-and-drop demo zip. Its `index.html` is byte-identical to `public/index.html`,
-and `npm run deploy` publishes `public/` for you.
+The handover records Cloudflare account `5523ce34c91c1ae9a01d0d2742fd8ecd`, which the current login
+cannot reach. It either belongs to a different Cloudflare login, or it was recorded wrongly. Resolve
+this before showing the tool to Gold Standard or Verra, because it determines the permanent home and
+the custom domain.
 
-```bash
-npx wrangler login
-npx wrangler d1 create article6      # copy database_id into wrangler.jsonc, replacing PASTE_DATABASE_ID_HERE
-npm run db:migrate
-npm run db:seed
-npm run deploy
-```
+Check the Websites list in the Cloudflare dashboard for account `1b72e4972bf0dd6b7818dd04284725ab`.
 
-Verify the data landed:
+If `sustainableiq.tech` is in this account: open the Worker, Settings, Domains and Routes, add
+`article6.sustainableiq.tech`. Live in about a minute.
 
-```bash
-npx wrangler d1 execute article6 --remote --command "SELECT COUNT(*), SUM(volume) FROM credit_blocks"
-```
+If it is not: either move the domain into this account, or redeploy the Worker into the account that
+holds the domain. Redeploying elsewhere costs one `wrangler d1 create`, one schema run and one seed
+run, roughly five minutes, and loses nothing, because the data is a SQL file in this repository.
 
-Expect 601 and 23,240,850. Then open `https://<your-worker-url>/api/parties`, which should return
-fourteen Parties. The API routes actually implemented in `src/index.js` are `/api/health`,
-`/api/snapshots`, `/api/dataset`, `/api/parties`, `/api/credits` and `/api/notes`.
+## Step 4: clean up
 
-## 5. Custom domain
+Safe to delete now that the site is live and verified:
 
-Cloudflare dashboard, open the project, Custom domains, add `article6.sustainableiq.tech`. Worth
-doing before showing Gold Standard or Verra.
+- `~/Projects/_to_delete_2026-08-30/`
+- `~/MyDrive/cowork_files/Article6_gs_verra/_to_delete/`
 
-## 6. Only then, clear the Drive fallback
+Keep permanently: `~/MyDrive/cowork_files/Article6_gs_verra/article6_tool/`, which holds the source
+workbook, and `05_marketing/` for the positioning content still to be written.
 
-`MyDrive/cowork_files/Article6_gs_verra/_to_delete/` is the safety net that made today's recovery
-possible. Leave it until the push has succeeded and the site is live. Keep
-`Article6_gs_verra/article6_tool/` permanently: it holds the source workbook.
+## Refreshing the data when Gold Standard and Verra publish a new workbook
 
-## What is in this repo beyond the application
+    python3 tools/extract.py <new-workbook.xlsx>
+    python3 tools/make_seed.py <new-snapshot.json> <new-cutoff-date>
+    npx wrangler d1 execute article6 --remote --yes --file=./migrations/0003_seed_<date>.sql
 
-```
-docs/handover_2026-08-25.md            verified calculation logic, Tanzania fixture, fourteen-country
-                                       regression set, findings, architecture decision. Not reproducible.
-docs/SIQ_MSI_Spec_CAToolRebuild_v1.md  rebuild specification
-docs/marketing_headline_draft.md       positioning draft
-data/source/                           the source workbook and its extracted metadata
-reference/engine.py                    verified Python engine, the specification of record
-reference/UNTESTED_prototype.html      first-session layout sketch, never run
-```
+Snapshots coexist in the database. `is_current` picks the default, and older snapshots stay queryable,
+so a Party can see exactly what changed between the cutoff it reported against and today.
 
-If `shared/engine.mjs` and `reference/engine.py` ever disagree, the Python is right until proven
-otherwise. It is the implementation that was reconciled cell by cell against the workbook.
+## Still open
+
+- Coverage beyond Gold Standard and Verra: whether to model source and confidence fields ready to
+  absorb ART, ACR, CAR, Article 6.4 units and national registries.
+- Scenario comparison as a first-class feature rather than a later addition.
+- The snapshot diff, which is the capability the tool argues for and cannot yet show.
+- Whether to notify David Hynes at Gold Standard and Liz Guinessey at Verra of the defects documented
+  in `docs/handover_2026-08-25.md` before or at publication.
